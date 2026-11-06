@@ -1,5 +1,5 @@
 /* Offline copy. A new build has a new version, which replaces the old copy. */
-const V = 'ristudy-cdf020d7cbbf';
+const V = 'ristudy-176f4ffd240e';
 const FILES = ['./', 'index.html', 'data.js', 'manifest.webmanifest', 'icon-180.png'];
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(V).then(c => c.addAll(FILES))); });
 self.addEventListener('activate', e => e.waitUntil(
