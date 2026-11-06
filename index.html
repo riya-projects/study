@@ -87,6 +87,40 @@ table.plain td,table.plain th{padding:8px 6px;border-bottom:1px solid var(--line
 table.plain td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 svg.chart{width:100%;height:auto;display:block}
 a{color:var(--accent)}
+
+/* learning features */
+.steps3 .st{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+.steps3 .st:last-child{border-bottom:0}
+.steps3 .dot{flex:none;width:30px;height:30px;border-radius:50%;border:2px solid var(--accent);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700}
+.steps3 .dot.done{background:var(--accent);color:var(--accent-ink)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btnrow button{flex:1;min-width:120px}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--card);border-top:2px solid var(--accent);border-radius:16px 16px 0 0;padding:8px 12px calc(10px + env(safe-area-inset-bottom));box-shadow:0 -6px 24px rgba(0,0,0,.25)}
+.pad{border:1.5px dashed var(--line);border-radius:12px;background:var(--bg);touch-action:none;display:block;width:100%;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.cols{display:grid;gap:10px}
+.cols.c2{grid-template-columns:1fr 1fr}.cols.c3{grid-template-columns:1fr 1fr 1fr}
+.col{border-radius:12px;padding:10px;background:var(--tint)}
+.col h4{margin:0 0 8px;font-size:14.5px;line-height:1.3}
+.col .it{background:var(--card);border-radius:8px;padding:7px 9px;margin:6px 0;font-size:15px}
+.col.k0{background:var(--tint)}.col.k1{background:var(--warn-bg)}.col.k2{background:var(--ok-bg)}
+.ladder .rung{display:flex;gap:10px;align-items:center;background:var(--tint);border-radius:10px;padding:10px 12px;margin:6px 0}
+.ladder .rung b{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-size:14px}
+.ladder .arrow{text-align:center;color:var(--soft);line-height:1}
+.hook{font-size:19px;font-weight:650;margin:10px 0}
+.sortrow{border:1.5px solid var(--line);border-radius:12px;padding:10px;margin:8px 0}
+.sortrow.ok{border-color:var(--ok);background:var(--ok-bg)}.sortrow.no{border-color:var(--bad);background:var(--bad-bg)}
+.pick{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.pick button{width:auto;flex:1;min-height:42px;padding:8px 10px;font-size:15px;background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.pick button.on{background:var(--accent);color:var(--accent-ink)}
+.chiprow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chiprow button{width:auto;min-height:36px;padding:6px 10px;font-size:14px;background:transparent;color:var(--soft);border:1px solid var(--line);font-weight:500}
+.chiprow button.on{background:var(--tint);color:var(--accent);border-color:var(--accent);font-weight:600}
+.fb{border-radius:12px;padding:12px;margin:10px 0}.fb.ok{background:var(--ok-bg)}.fb.no{background:var(--bad-bg)}.fb.mid{background:var(--warn-bg)}
+.onb{min-height:70vh;display:flex;flex-direction:column;justify-content:center}
+.onb .n{font-size:15px;color:var(--soft)}
+.onb h1{font-size:28px}
+
+.sheet .row span{display:flex;gap:4px}
 </style>
 </head>
 <body>
@@ -265,6 +299,8 @@ a{color:var(--accent)}
     body.p = attempt.pct;                               // her phone's own mark, to spot a bank that differs
     if (attempt.of) body.r = attempt.of;                // what a retry or mix was built from
     if (attempt.days) body.g = attempt.days;            // topic days she has done
+    if (attempt.why && Object.keys(attempt.why).length) body.w = attempt.why;   // why she thinks she missed each: k didn't know, m misread, s slip, g guessed
+    if (attempt.note) body.n = String(attempt.note).slice(0, 600);                // the rule in her own words
     if (attempt.feel) body.f = attempt.feel;            // how the set felt: easy | right | hard
     if (attempt.short) body.k = 1;                      // she chose the short version
     if (attempt.times) body.x = attempt.times;          // seconds per question, one-at-a-time modes only
@@ -279,7 +315,7 @@ a{color:var(--accent)}
     Object.keys(body.a).forEach(function (id) {
       if (itemsById[id]) answers[id] = decodeResp(itemsById[id], body.a[id]);
     });
-    return { set: body.s, mode: body.m, finished: body.t, secs: body.d, order: body.o, answers: answers, pct: body.p, of: body.r || null, days: body.g || null, feel: body.f || null, short: !!body.k, times: body.x || null };
+    return { set: body.s, mode: body.m, finished: body.t, secs: body.d, order: body.o, answers: answers, pct: body.p, of: body.r || null, days: body.g || null, why: body.w || null, note: body.n || null, feel: body.f || null, short: !!body.k, times: body.x || null };
   }
 
   /* Adaptive test. Rules are the routing note in the adaptive bank:
@@ -557,75 +593,277 @@ a{color:var(--accent)}
   }
   function untouched(s) { return !attemptsFor(s.id).length && !earlier(s.id).length; }
 
+  /* ---------- the day in three steps ---------- */
+  function daily() { S.daily = S.daily || {}; return (S.daily[today()] = S.daily[today()] || {}); }
+  function markDaily(k) { daily()[k] = true; save(); }
+  function streak() {
+    var n = 0, d = new Date();
+    var worked = function (key) { return (S.daily || {})[key] && Object.keys(S.daily[key]).length || S.attempts.some(function (a) { return ymd(new Date(a.finished)) === key; }); };
+    if (!worked(ymd(d))) d.setDate(d.getDate() - 1);          // today not started yet does not break the run
+    while (worked(ymd(d))) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  }
+  function nextSet() {
+    for (var i = 0; i < EXTRA.queue.length; i++) {
+      var open = setsForDay(EXTRA.queue[i].t).filter(function (s) { return untouched(s) && s.kind !== 'mock'; });
+      if (open.length) return open.sort(function (a, b) { return (a.difficulty || '').indexOf('warm') - (b.difficulty || '').indexOf('warm'); })[0];
+    }
+    return null;
+  }
+  function pictureForToday() {
+    var vis = EXTRA.visuals || []; if (!vis.length) return null;
+    var w = weakness(), missTopics = {};
+    Object.keys(w.stats).forEach(function (id) { if (w.stats[id].last < 1 && itemsById[id]) missTopics[itemsById[id].topic] = (missTopics[itemsById[id].topic] || 0) + 1; });
+    S.vis = S.vis || {};
+    var ranked = vis.slice().sort(function (a, b) {
+      var sa = (missTopics[a.topic] || 0) - (S.vis[a.id] ? 2 + (S.vis[a.id].best >= 1 ? 3 : 0) : 0);
+      var sb = (missTopics[b.topic] || 0) - (S.vis[b.id] ? 2 + (S.vis[b.id].best >= 1 ? 3 : 0) : 0);
+      return sb - sa;
+    });
+    var dayN = Math.floor(Date.parse(today() + 'T12:00:00') / 864e5);
+    return ranked[0] && (missTopics[ranked[0].topic] || !S.vis[ranked[0].id]) ? ranked[0] : vis[dayN % vis.length];
+  }
+
   function viewHome() {
+    if (!S.onb) return viewWelcome(0);
     var out = [h('h1', null, 'Hi Ri')];
     if (!storageOk) out.push(h('div', { class: 'card', style: 'border-color:var(--bad)' },
-      'This browser is not saving your work (private mode?). Open the page in normal Safari and add it to your Home Screen.'));
-
+      'This browser is not saving your work. Open the page in normal Safari (not Private) and add it to your Home Screen.'));
+    var line = [];
     if (S.exam) {
       var days = Math.ceil((new Date(S.exam + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 864e5);
-      out.push(h('p', { class: 'soft' }, days > 0 ? days + ' days to your exam (' + fmtDate(S.exam) + ')' : 'Exam day: ' + fmtDate(S.exam)));
+      line.push(days > 0 ? days + ' days to your exam' : 'Exam day');
+    } else line.push(h('a', { href: '#more' }, 'Set your exam date'));
+    var st = streak(); if (st >= 2) line.push(' · ' + st + ' days in a row');
+    out.push(h('p', { class: 'soft' }, line));
+
+    var dd = daily(), draftKeys = Object.keys(S.drafts), due = dueCards();
+    var dot = function (n, done) { return h('div', { class: 'dot' + (done ? ' done' : ''), 'aria-label': done ? 'done' : 'step ' + n }, done ? '✓' : String(n)); };
+    var steps = h('div', { class: 'card steps3' }, h('div', { class: 'soft small' }, 'Today, in three small steps'));
+
+    // 1 warm up
+    add(steps, h('div', { class: 'st' }, dot(1, dd.warm), h('div', { class: 'grow' },
+      h('b', null, 'Warm up'), h('div', { class: 'small soft' }, due.length ? 'Write 5 of your rules from memory · 5 min' : 'Nothing due today. Skip this one.'),
+      due.length && !dd.warm ? h('div', { class: 'btnrow' }, h('button', { class: 'sm', onclick: function () { reviewCards(due.slice(0, 5), 'warm'); } }, 'Start')) : null)));
+
+    // 2 main work
+    var main = h('div', { class: 'grow' }, h('b', null, 'Main work'));
+    var ns = nextSet();
+    if (draftKeys.length) {
+      var d = S.drafts[draftKeys[0]];
+      add(main, [h('div', { class: 'small soft' }, 'You stopped part-way: ' + d.title + ' · ' + Object.keys(d.answers).length + ' answered'),
+        h('div', { class: 'btnrow' }, h('button', { class: 'sm', onclick: function () { go('#run/' + encodeURIComponent(draftKeys[0])); } }, 'Carry on'))]);
+    } else if (dd.main) {
+      add(main, [h('div', { class: 'small soft' }, 'Done for today. More only if you feel like it.'),
+        h('div', { class: 'btnrow' }, h('button', { class: 'sm ghost', onclick: function () { go('#sets'); } }, 'More practice'))]);
     } else {
-      out.push(h('p', { class: 'soft' }, 'Exam about 6 to 8 December. ', h('a', { href: '#more' }, 'Set the date')));
+      add(main, h('div', { class: 'small soft' }, ns ? ns.title + ' · ' + ns.items.length + ' questions' : 'Your next set is being written. Use the mix today.'));
+      add(main, h('div', { class: 'btnrow' },
+        ns ? h('button', { class: 'sm', onclick: function () { go('#set/' + ns.id); } }, 'Full set') : null,
+        ns && ns.items.length >= 30 ? h('button', { class: 'sm ghost', onclick: function () { startShort(ns); } }, 'Short · 20') : null,
+        h('button', { class: 'sm ghost', onclick: startMix }, "Tired · mix of 15")));
     }
+    add(steps, h('div', { class: 'st' }, dot(2, dd.main), main));
 
-    var standalone = window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-    if (!standalone && !S.hintOff) out.push(h('div', { class: 'card tint' },
-      h('b', null, 'Put this on your Home Screen'),
-      h('p', { class: 'small' }, 'Do this before your first set. In Safari tap the Share button, then "Add to Home Screen", and always open it from that icon. It works without signal and keeps your record safe.'),
-      h('button', { class: 'plain', onclick: function () { S.hintOff = true; save(); route(); } }, 'Done, hide this')));
+    // 3 lock it in
+    var pic = pictureForToday();
+    add(steps, h('div', { class: 'st' }, dot(3, dd.lock), h('div', { class: 'grow' },
+      h('b', null, 'Lock it in'), h('div', { class: 'small soft' }, pic ? 'One picture and a 1-minute exercise: ' + pic.title : 'Read one rule aloud before you sleep.'),
+      pic && !dd.lock ? h('div', { class: 'btnrow' }, h('button', { class: 'sm', onclick: function () { go('#pic/' + pic.id); } }, 'Open')) : null)));
+    out.push(steps);
 
-    var drafts = Object.keys(S.drafts);
-    if (drafts.length) {
-      var d = S.drafts[drafts[0]];
-      out.push(h('div', { class: 'card tint' },
-        h('div', { class: 'soft small' }, 'You stopped part-way'),
-        h('h3', null, d.title),
-        h('p', { class: 'small' }, Object.keys(d.answers).length + ' of ' + (d.mode === 'adaptive' ? 'up to 50' : d.ids.length) + ' answered'),
-        h('button', { onclick: function () { go('#run/' + encodeURIComponent(drafts[0])); } }, 'Carry on')));
-    }
+    if (dd.warm && dd.main && dd.lock) out.push(h('div', { class: 'card tint center' }, h('b', null, 'All three done. Close the app and rest.')));
 
-    var nd = nextDay();
-    if (nd) {
-      var ready = setsForDay(nd.t).filter(untouched);
-      var waiting = BANK.sets.filter(function (s) { return untouched(s) && S.days[s.t || EXTRA.setDay[s.id]]; });
-      out.push(h('div', { class: 'card' },
-        h('div', { class: 'soft small' }, 'Up next in your plan'),
-        h('h3', null, nd.t + ': ' + nd.title),
-        h('p', { class: 'small soft' }, 'Saunders ' + nd.saunders + (nd.dense ? ' · dense topic, lighter question load' : '')),
-        ready.length
-          ? ready.map(function (s) { return h('button', { onclick: function () { go('#set/' + s.id); } }, 'Start: ' + s.title); })
-          : h('p', { class: 'small' }, 'The question set for this topic is being written and checked. It appears here when it is ready.'),
-        h('button', { class: 'plain', onclick: function () { S.days[nd.t] = true; save(); route(); toast(nd.t + ' ticked'); } }, 'Tick ' + nd.t + ' as done')));
-      if (waiting.length) {
-        out.push(h('h2', null, 'Ready and not done yet'));
-        waiting.forEach(function (s) { out.push(setRow(s)); });
-      }
-    }
-
-    var mixDone = S.attempts.some(function (a) { return a.of === 'mix:' + today(); });
-    out.push(h('div', { class: 'card row' },
-      h('div', { class: 'grow' }, h('b', null, "Today's mix"), h('div', { class: 'small soft' }, mixDone ? 'Done today. A new one tomorrow.' : '15 questions picked from your misses and weak areas · about 20 min')),
-      h('button', { class: 'sm' + (mixDone ? ' ghost' : ''), onclick: startMix }, S.drafts['mix:' + today()] ? 'Carry on' : mixDone ? 'Again' : 'Start')));
-
-    var due = dueCards().length;
-    out.push(h('div', { class: 'card row' },
-      h('div', { class: 'grow' }, h('b', null, 'My rules'), h('div', { class: 'small soft' }, due ? due + ' to review today' : 'All reviewed for today')),
-      h('button', { class: 'sm', onclick: function () { go('#rules'); } }, due ? 'Review' : 'Open')));
+    var unsent = S.attempts.filter(function (a) { return !a.sent; }).length;
+    if (unsent) out.push(h('div', { class: 'card', style: 'border-color:var(--warn)' },
+      h('b', null, unsent + (unsent === 1 ? ' result' : ' results') + ' not sent to Nova yet'),
+      h('p', { class: 'small soft' }, 'Sending lets Nova plan tomorrow around how today went, and keeps a second copy of your record.'),
+      h('button', { class: 'ghost', onclick: function () { go('#more'); } }, 'Send now')));
 
     var res = allResults();
     if (res.length) {
       var last = res.filter(function (r) { return !r.practice; }).pop() || res[res.length - 1];
-      out.push(h('div', { class: 'card row' },
-        h('div', { class: 'grow' }, h('b', null, 'Last result: ' + fmtPct(last.pct)), h('div', { class: 'small soft' }, last.title + ' · ' + fmtDate(last.date))),
-        h('button', { class: 'sm ghost', onclick: function () { go('#progress'); } }, 'Progress')));
+      out.push(h('div', { class: 'card row', style: 'cursor:pointer', onclick: function () { go('#progress'); } },
+        h('div', { class: 'grow' }, h('b', null, 'Last result: ' + fmtPct(last.pct)), h('div', { class: 'small soft' }, last.title + ' · ' + fmtDate(last.date))), h('span', { class: 'soft' }, '›')));
     }
-    var unsent = S.attempts.filter(function (a) { return !a.sent; }).length;
-    if (unsent) out.push(h('div', { class: 'card', style: 'border-color:var(--warn)' },
-      h('b', null, unsent + (unsent === 1 ? ' result' : ' results') + ' not sent to Nova yet'),
-      h('p', { class: 'small soft' }, 'Sending keeps a second copy of your record, so nothing is lost if your phone is cleared.'),
-      h('button', { class: 'ghost', onclick: function () { go('#more'); } }, 'Send now')));
-    out.push(h('p', { class: 'center' }, h('a', { href: '#more' }, 'Exam date, sending results and backup')));
+    var standalone = window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    if (!standalone && !S.hintOff) out.push(h('div', { class: 'card' },
+      h('b', null, 'Not on your Home Screen yet?'),
+      h('p', { class: 'small' }, 'In Safari tap the Share button, then "Add to Home Screen". Always open it from that icon.'),
+      h('button', { class: 'plain', onclick: function () { S.hintOff = true; save(); route(); } }, 'Done, hide this')));
+    out.push(h('p', { class: 'center small' }, h('a', { href: '#more' }, 'Exam date, sending and backup'), ' · ', h('a', { href: '#welcome' }, 'How this works')));
+    show(out);
+  }
+
+  /* ---------- first open ---------- */
+  var WELCOME = [
+    ['Everything for your exam is here', 'Every question set, your scores, your rules and your plan. Nothing to download, nothing to lose in chat.'],
+    ['Each day is three small steps', '1. Warm up: write a few rules from memory.\n2. Main work: a full set, a short set, or a mix when you are tired.\n3. Lock it in: one picture and a one-minute exercise.\n\nThe app marks everything the moment you finish.'],
+    ['It learns how you learn', 'Every miss becomes a rule card and comes back until you know it. Tell it how a set felt and what tripped you up, then tap "Send to Nova". Tomorrow is planned around today.'],
+    ['Put it on your Home Screen now', 'In Safari tap the Share button, then "Add to Home Screen". Always open it from that icon: it works without signal and keeps your record safe.\n\nThere is a scratch pad on every question for your working, just like the whiteboard in the exam.']
+  ];
+  function viewWelcome(i) {
+    document.querySelector('nav.tabs').style.display = S.onb ? '' : 'none';
+    var w = WELCOME[i], last = i === WELCOME.length - 1;
+    show(h('div', { class: 'onb' },
+      h('div', { class: 'n' }, (i + 1) + ' of ' + WELCOME.length),
+      h('h1', null, w[0]), h('p', { class: 'stem' }, w[1]),
+      h('div', { class: 'stack', style: 'margin-top:18px' },
+        h('button', { onclick: function () { if (last) { S.onb = true; save(); document.querySelector('nav.tabs').style.display = ''; location.hash = '#home'; route(); } else viewWelcome(i + 1); } }, last ? 'Start' : 'Next'),
+        i > 0 ? h('button', { class: 'plain', onclick: function () { viewWelcome(i - 1); } }, 'Back') : null)));
+  }
+
+  /* ---------- scratch pad: finger or pencil, like the exam whiteboard ---------- */
+  var padStrokes = [];
+  function makePad(height, strokes) {
+    var cv = h('canvas', { class: 'pad', 'aria-label': 'Scratch pad. Write with your finger.' });
+    var ctx = null, cur = null;
+    var size = function () {
+      var r = window.devicePixelRatio || 1, wpx = cv.clientWidth || 320;
+      cv.width = wpx * r; cv.height = height * r; cv.style.height = height + 'px';
+      ctx = cv.getContext('2d'); ctx.scale(r, r); ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.strokeStyle = getComputedStyle(document.body).color;
+      strokes.forEach(function (s) { ctx.beginPath(); s.forEach(function (p, k) { if (k) ctx.lineTo(p[0], p[1]); else ctx.moveTo(p[0], p[1]); }); ctx.stroke(); });
+    };
+    var pos = function (e) { var b = cv.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+    cv.addEventListener('pointerdown', function (e) { e.preventDefault(); cv.setPointerCapture(e.pointerId); cur = [pos(e)]; strokes.push(cur); });
+    cv.addEventListener('pointermove', function (e) {
+      if (!cur) return; e.preventDefault();
+      var p = pos(e), q = cur[cur.length - 1]; cur.push(p);
+      ctx.beginPath(); ctx.moveTo(q[0], q[1]); ctx.lineTo(p[0], p[1]); ctx.stroke();
+    });
+    var end = function () { cur = null; };
+    cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+    setTimeout(size, 0);
+    return { el: cv, clear: function () { strokes.length = 0; size(); } };
+  }
+  function togglePad() {
+    var old = document.querySelector('.sheet');
+    if (old) { old.remove(); return; }
+    var pad = makePad(Math.round(window.innerHeight * 0.38), padStrokes);
+    document.body.appendChild(h('div', { class: 'sheet' },
+      h('div', { class: 'row', style: 'margin-bottom:6px' }, h('b', null, 'Scratch pad'),
+        h('span', null, h('button', { class: 'plain', onclick: pad.clear }, 'Clear'), h('button', { class: 'plain', onclick: togglePad }, 'Close'))),
+      pad.el));
+  }
+
+  /* ---------- pictures and the exercises made from them ---------- */
+  function bodyHF() {
+    var ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 320 210'); svg.setAttribute('class', 'chart'); svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Two bodies. Right-sided failure: neck veins, weight and swollen legs are marked. Left-sided failure: the lungs are marked.');
+    var el = function (tag, at, text) { var e = document.createElementNS(ns, tag); Object.keys(at).forEach(function (k) { e.setAttribute(k, at[k]); }); if (text) e.textContent = text; svg.appendChild(e); };
+    var body = function (x, lungs, legs, neck) {
+      var line = { stroke: 'var(--soft)', 'stroke-width': 2.5, fill: 'none', 'stroke-linecap': 'round' };
+      el('circle', Object.assign({ cx: x, cy: 34, r: 15 }, line));
+      el('rect', Object.assign({ x: x - 26, y: 56, width: 52, height: 72, rx: 14 }, line));
+      el('path', Object.assign({ d: 'M' + (x - 26) + ' 66 L' + (x - 46) + ' 112 M' + (x + 26) + ' 66 L' + (x + 46) + ' 112' }, line));
+      el('path', Object.assign({ d: 'M' + (x - 12) + ' 128 L' + (x - 14) + ' 190 M' + (x + 12) + ' 128 L' + (x + 14) + ' 190' }, Object.assign({}, line, legs ? { stroke: 'var(--accent)', 'stroke-width': 11 } : {})));
+      if (neck) el('rect', { x: x - 5, y: 47, width: 10, height: 11, fill: 'var(--accent)', rx: 3 });
+      el('ellipse', { cx: x - 11, cy: 84, rx: 9, ry: 16, fill: lungs ? 'var(--warn)' : 'none', stroke: 'var(--soft)', 'stroke-width': 1.5 });
+      el('ellipse', { cx: x + 11, cy: 84, rx: 9, ry: 16, fill: lungs ? 'var(--warn)' : 'none', stroke: 'var(--soft)', 'stroke-width': 1.5 });
+    };
+    body(85, false, true, true); body(235, true, false, false);
+    el('text', { x: 85, y: 207, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 700, fill: 'var(--ink)' }, 'RIGHT = body');
+    el('text', { x: 235, y: 207, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 700, fill: 'var(--ink)' }, 'LEFT = lungs');
+    return svg;
+  }
+  function drawVisual(v) {
+    var box = h('div', null);
+    if (v.art === 'body-hf') add(box, h('div', { class: 'card' }, bodyHF()));
+    if (v.kind === 'compare') {
+      add(box, h('div', { class: 'cols c' + Math.min(3, v.groups.length) }, v.groups.map(function (g, gi) {
+        return h('div', { class: 'col k' + (gi % 3) }, h('h4', null, g.name), g.items.map(function (x) { return h('div', { class: 'it' }, x); }));
+      })));
+    } else {
+      var lad = h('div', { class: 'ladder' });
+      v.steps.forEach(function (s, i) { if (i) add(lad, h('div', { class: 'arrow', 'aria-hidden': 'true' }, '↓')); add(lad, h('div', { class: 'rung' }, h('b', null, String(i + 1)), h('span', null, s))); });
+      add(box, lad);
+    }
+    return box;
+  }
+  function viewPicture(id) {
+    var v = (EXTRA.visuals || []).filter(function (x) { return x.id === id; })[0];
+    if (!v) return viewLearn();
+    S.vis = S.vis || {};
+    var rec = S.vis[id];
+    show(h('button', { class: 'plain', onclick: function () { go('#learn'); } }, '‹ Learn'),
+      h('h1', null, v.title), h('p', { class: 'hook' }, v.hook), drawVisual(v),
+      h('p', { class: 'small soft' }, 'Look for 20 seconds. Then hide it and test yourself.'),
+      h('button', { onclick: function () { playVisual(v); } }, v.kind === 'compare' ? 'Hide it and sort them' : 'Hide it and put them in order'),
+      rec ? h('p', { class: 'small soft center' }, 'Best so far: ' + Math.round(rec.best * 100) + '%') : null);
+  }
+  function playVisual(v) {
+    var seed = v.id + Date.now(), checked = false, $list = h('div');
+    var finish = function (score) {
+      S.vis[v.id] = { best: Math.max(score, (S.vis[v.id] || {}).best || 0), last: score, day: today() };
+      markDaily('lock');
+      add($list, [h('div', { class: 'fb ' + (score >= 1 ? 'ok' : score >= 0.6 ? 'mid' : 'no') }, h('b', null, score >= 1 ? 'All right.' : Math.round(score * 100) + '% right.'), ' ' + v.hook),
+        score < 1 ? drawVisual(v) : null,
+        h('div', { class: 'stack' }, score < 1 ? h('button', { onclick: function () { playVisual(v); } }, 'Try again') : null,
+          h('button', { class: 'ghost', onclick: function () { go('#home'); } }, 'Back to Today'))]);
+    };
+    if (v.kind === 'compare') {
+      var rows = []; v.groups.forEach(function (g, gi) { g.items.forEach(function (x) { rows.push({ t: x, g: gi, pick: null }); }); });
+      rows = shuffled(rows, seed);
+      rows.forEach(function (r) {
+        r.el = h('div', { class: 'sortrow' }, h('b', null, r.t), h('div', { class: 'pick' }, v.groups.map(function (g, gi) {
+          var b = h('button', { onclick: function () { if (checked) return; r.pick = gi; Array.prototype.forEach.call(r.el.querySelectorAll('button'), function (x) { x.className = ''; }); b.className = 'on'; } }, g.name.split(/[:(]/)[0].trim());
+          return b;
+        })));
+        add($list, r.el);
+      });
+      add($list, h('button', { onclick: function (e) {
+        if (rows.some(function (r) { return r.pick === null; })) return toast('Choose a side for each one');
+        checked = true; e.target.remove();
+        rows.forEach(function (r) { r.el.className = 'sortrow ' + (r.pick === r.g ? 'ok' : 'no'); if (r.pick !== r.g) add(r.el, h('div', { class: 'small' }, 'Belongs with: ' + v.groups[r.g].name)); });
+        finish(rows.filter(function (r) { return r.pick === r.g; }).length / rows.length);
+      } }, 'Check'));
+    } else {
+      var order = [], opts = shuffled(v.steps.map(function (s, i) { return { t: s, i: i }; }), seed);
+      var $picked = h('div', { class: 'ladder' }), $opts = h('div');
+      var draw = function () {
+        $picked.innerHTML = ''; $opts.innerHTML = '';
+        order.forEach(function (o, k) { add($picked, h('div', { class: 'rung' }, h('b', null, String(k + 1)), h('span', null, o.t))); });
+        opts.filter(function (o) { return order.indexOf(o) < 0; }).forEach(function (o) {
+          add($opts, h('div', { class: 'sortrow', style: 'cursor:pointer', onclick: function () { order.push(o); draw(); } }, o.t));
+        });
+        if (order.length === opts.length) add($opts, h('button', { onclick: function () {
+          $opts.innerHTML = '';
+          finish(order.filter(function (o, k) { return o.i === k; }).length / order.length);
+        } }, 'Check'));
+        else if (order.length) add($opts, h('button', { class: 'plain', onclick: function () { order.pop(); draw(); } }, 'Undo last'));
+      };
+      add($list, [h('p', { class: 'small soft' }, 'Tap them in the right order.'), $picked, $opts]); draw();
+    }
+    show(h('button', { class: 'plain', onclick: function () { go('#pic/' + v.id); } }, '‹ Show the picture'), h('h1', null, v.title), $list);
+  }
+
+  /* ---------- learn tab ---------- */
+  function viewLearn() {
+    var due = dueCards(), vis = EXTRA.visuals || [];
+    S.vis = S.vis || {};
+    var out = [h('h1', null, 'Learn'),
+      h('div', { class: 'card row' }, h('div', { class: 'grow' }, h('b', null, 'My rules'),
+        h('div', { class: 'small soft' }, due.length ? due.length + ' to write from memory today' : 'All reviewed for today')),
+        h('button', { class: 'sm' + (due.length ? '' : ' ghost'), onclick: function () { if (due.length) reviewCards(due.slice(0, 10)); else go('#rules'); } }, due.length ? 'Review' : 'See all'))];
+    if ((EXTRA.lessons || []).length) {
+      out.push(h('h2', null, 'Short lessons'));
+      EXTRA.lessons.forEach(function (l) {
+        out.push(h('div', { class: 'card row', style: 'cursor:pointer', onclick: function () { go('#lesson/' + l.id); } },
+          h('div', { class: 'grow' }, h('b', null, l.title), h('div', { class: 'small soft' }, 'About ' + (l.minutes || 5) + ' min')), h('span', { class: 'soft' }, '›')));
+      });
+    }
+    out.push(h('h2', null, 'Pictures and exercises'));
+    vis.forEach(function (v) {
+      var r = S.vis[v.id];
+      out.push(h('div', { class: 'card row', style: 'cursor:pointer', onclick: function () { go('#pic/' + v.id); } },
+        h('div', { class: 'grow' }, h('b', null, v.title), h('div', { class: 'small soft' }, v.kind === 'compare' ? 'Picture, then sort' : 'Steps, then put in order')),
+        h('span', { class: 'pill ' + (r && r.best >= 1 ? 'ok' : '') }, r ? Math.round(r.best * 100) + '%' : 'New')));
+    });
+    out.push(h('div', { class: 'card row', style: 'cursor:pointer', onclick: function () { reviewCards(allCards().filter(function (c) { return c.src === 'Formula'; })); } },
+      h('div', { class: 'grow' }, h('b', null, 'Dose formulas'), h('div', { class: 'small soft' }, 'Write each one, then check')), h('span', { class: 'soft' }, '›')));
+    out.push(h('p', { class: 'center small' }, h('a', { href: '#rules' }, 'See every rule card')));
     show(out);
   }
 
@@ -658,8 +896,8 @@ a{color:var(--accent)}
   }
   function viewLesson(id) {
     var l = (EXTRA.lessons || []).filter(function (x) { return x.id === id; })[0];
-    if (!l) return viewSets();
-    var out = [h('button', { class: 'plain', onclick: function () { go('#sets'); } }, '‹ Sets and lessons'), h('h1', null, l.title)];
+    if (!l) return viewLearn();
+    var out = [h('button', { class: 'plain', onclick: function () { go('#learn'); } }, '‹ Learn'), h('h1', null, l.title)];
     (l.sections || []).forEach(function (sec) {
       out.push(h('div', { class: 'card' }, sec.h ? h('h3', { style: 'margin-top:0' }, sec.h) : null, h('div', { class: 'stem' }, sec.body)));
     });
@@ -687,9 +925,10 @@ a{color:var(--accent)}
     } else {
       out.push(h('div', { class: 'card stack' },
         h('button', { onclick: start('page') }, draft ? 'Start again: all questions on one page' : 'Start: all questions on one page'),
+        h('button', { class: 'ghost', onclick: start('learn') }, 'Study mode: see the answer after each question'),
         h('button', { class: 'ghost', onclick: start('exam') }, 'Exam mode: one at a time, no going back'),
         s.items.length >= 30 ? h('button', { class: 'ghost', onclick: function () { startShort(s); } }, 'Tired or short on time: 20 questions') : null,
-        h('p', { class: 'small soft' }, 'Answers and explanations show only after you finish. Your work is saved as you go, so you can stop and come back.')));
+        h('p', { class: 'small soft' }, 'Not sure which? Study mode while a topic is new, one page or exam mode to test yourself. Your work is saved as you go.')));
     }
     if (mine.length || old.length) {
       out.push(h('h2', null, 'Your results'));
@@ -788,6 +1027,7 @@ a{color:var(--accent)}
     if (!d) return go('#sets');
     stopTimer();
     curSeed = d.seed || '';
+    padStrokes = [];
     var $time = h('span', { class: 't' }, fmtTime(d.elapsed));
     var $count = h('span', { class: 'small soft' });
     var tick = 0;
@@ -804,13 +1044,13 @@ a{color:var(--accent)}
     var onAnswer = function () { save(); refreshCount(); };
     function answeredCount() { return d.ids.filter(function (id) { return C.isAnswered(itemsById[id], d.answers[id]); }).length; }
     function refreshCount() {
-      $count.textContent = d.mode === 'page' ? answeredCount() + ' of ' + d.ids.length + ' answered'
-        : d.mode === 'adaptive' ? 'Question ' + (d.delivered.length + 1) : 'Question ' + (d.idx + 1) + ' of ' + d.ids.length;
+      $count.textContent = d.mode === 'page' ? answeredCount() + ' of ' + d.ids.length
+        : d.mode === 'adaptive' ? 'Q ' + (d.delivered.length + 1) : 'Q ' + (d.idx + 1) + ' of ' + d.ids.length;
     }
 
     var bar = h('div', { class: 'bar' },
       h('button', { class: 'plain', onclick: function () { save(); stopTimer(); go('#home'); toast('Saved. Carry on any time.'); } }, 'Pause'),
-      $count, $time);
+      $count, h('button', { class: 'plain', 'aria-label': 'Scratch pad', onclick: togglePad }, '✎ Pad'), $time);
 
     if (d.mode === 'page') {
       var body = [], lastCase = null;
@@ -846,11 +1086,26 @@ a{color:var(--accent)}
             d.delivered.push({ id: id, level: it.level, caseId: it.caseId || null, pts: C.score(it, d.answers[id]) });
             d.current = null;
           } else d.idx += 1;
-          save(); showOne(); window.scrollTo(0, 0);
+          save(); padStrokes.length = 0; var sh = document.querySelector('.sheet'); if (sh) sh.remove();
+          showOne(); window.scrollTo(0, 0);
         } }, 'Next');
+        var $check = null;
+        if (d.mode === 'learn') {
+          $next.style.display = 'none';
+          $check = h('button', { disabled: !C.isAnswered(it, d.answers[id]), onclick: function () {
+            var pts = C.score(it, d.answers[id]), trap = C.trapFor(it, d.answers[id]);
+            Array.prototype.forEach.call($slot.querySelectorAll('.q input, .q select'), function (x) { x.disabled = true; });
+            $check.remove(); $next.style.display = ''; $next.disabled = false;
+            $slot.insertBefore(h('div', { class: 'fb ' + (pts >= 1 ? 'ok' : pts > 0 ? 'mid' : 'no') },
+              h('b', null, pts >= 1 ? 'Right.' : pts > 0 ? 'Partly right.' : 'Not this time.'),
+              pts < 1 ? h('div', { style: 'white-space:pre-wrap;margin:6px 0' }, h('span', { class: 'soft' }, 'Answer: '), C.answerText(it)) : null,
+              trap ? h('div', null, h('b', null, 'The trap: '), trap) : null,
+              h('div', { class: 'why' }, it.why)), $next);
+          } }, 'Check my answer');
+        }
         $slot.innerHTML = '';
-        add($slot, [renderItem(it, n, d.answers, function () { save(); $next.disabled = !C.isAnswered(it, d.answers[id]); }, false), $next,
-          h('p', { class: 'small soft center' }, 'No going back in this mode, like the real exam.')]);
+        add($slot, [renderItem(it, n, d.answers, function () { save(); $next.disabled = !C.isAnswered(it, d.answers[id]); if ($check) $check.disabled = $next.disabled; }, false), $check, $next,
+          d.mode === 'learn' ? null : h('p', { class: 'small soft center' }, 'No going back in this mode, like the real exam.')]);
         refreshCount();
       };
       show(bar, $slot);
@@ -991,6 +1246,7 @@ a{color:var(--accent)}
     S.attempts.push(attempt);
     Object.keys(m.per).forEach(function (id) { if (m.per[id] < 1) S.cards['M:' + id] = { box: 0, due: today() }; });
     delete S.drafts[key];
+    daily().main = true;
     autoDays();
     save();
     go('#result/' + (S.attempts.length - 1));
@@ -999,7 +1255,8 @@ a{color:var(--accent)}
   /* ---------- results ---------- */
   function resultMessage(a) {
     a.days = Object.keys(S.days).filter(function (t) { return S.days[t]; });
-    return 'My result: ' + a.title + ' ' + fmtPct(a.pct) + ' (' + fmtPts(a.score) + ' of ' + a.max + ') in ' + Math.round(a.secs / 60) + ' min.\n' + C.encodeResult(a, itemsById);
+    var words = a.note && a.note.trim() ? 'In my own words: ' + a.note.trim() + '\n' : '';
+    return words + 'My result: ' + a.title + ' ' + fmtPct(a.pct) + ' (' + fmtPts(a.score) + ' of ' + a.max + ') in ' + Math.round(a.secs / 60) + ' min.\n' + C.encodeResult(a, itemsById);
   }
   /* Hand a message to her chat app. Share sheet first, then the clipboard, then a box she can
      copy from: one of them always works, whatever the browser allows. */
@@ -1064,7 +1321,14 @@ a{color:var(--accent)}
     if (a.adaptive) out.push(h('div', { class: 'card' }, h('h3', { style: 'margin-top:0' }, 'Your path'),
       h('p', { class: 'small soft' }, 'Difficulty of each question, 1 easy to 5 hard:'), h('p', null, a.adaptive.path.join(' '))));
 
+    if (wrongIds.length) {
+      var ta = h('textarea', { 'aria-label': 'The rule in your own words', placeholder: 'Pick the miss that surprised you most. Write its rule in your own words, one or two lines.', style: 'font-family:inherit;min-height:80px' }, a.note || '');
+      ta.addEventListener('input', function () { a.note = ta.value; a.sent = false; save(); });
+      out.push(h('div', { class: 'card' }, h('b', null, 'Say it in your own words'),
+        h('p', { class: 'small soft' }, 'Explaining a rule yourself is the fastest way to keep it. Nova reads this and tells you if you have it.'), ta));
+    }
     out.push(h('h2', null, 'Review'));
+    out.push(h('p', { class: 'small soft' }, 'Wrong ones first. Open each, read why, and tap what went wrong.'));
     var order = ids.slice().sort(function (x, y) { return a.per[x] - a.per[y]; });
     order.forEach(function (id) {
       var it = itemsById[id]; if (!it) return;
@@ -1081,6 +1345,14 @@ a{color:var(--accent)}
       var trap = C.trapFor(it, a.answers[id]);
       if (trap) add(det, h('div', { class: 'card', style: 'border-color:var(--warn)' }, h('b', null, 'The trap: '), trap));
       add(det, h('div', { class: 'why' }, it.why));
+      if (pts < 1) {
+        a.why = a.why || {};
+        var $chips = h('div', { class: 'chiprow' }, [['k', "Didn't know it"], ['m', 'Misread it'], ['s', 'Slip in the working'], ['g', 'Guessed']].map(function (r) {
+          var b = h('button', { class: a.why[id] === r[0] ? 'on' : '', onclick: function () { a.why[id] = r[0]; a.sent = false; save(); Array.prototype.forEach.call($chips.querySelectorAll('button'), function (x) { x.className = ''; }); b.className = 'on'; } }, r[1]);
+          return b;
+        }));
+        add(det, [h('div', { class: 'small soft', style: 'margin-top:8px' }, 'Why did this one go wrong?'), $chips]);
+      }
       out.push(det);
     });
     show(out);
@@ -1091,7 +1363,7 @@ a{color:var(--accent)}
     var cards = allCards(), due = dueCards();
     var out = [h('h1', null, 'My rules'),
       h('p', { class: 'soft small' }, cards.length + ' cards: your rules, the dose formulas, and every question you have missed. Missed questions are added by themselves.')];
-    var sitting = due.slice(0, 15);
+    var sitting = due.slice(0, 10);
     out.push(h('button', { disabled: !due.length, onclick: function () { reviewCards(sitting); } },
       !due.length ? 'Nothing due today' : due.length > 15 ? 'Review 15 now (' + due.length + ' due)' : 'Review ' + due.length + ' due today'));
     out.push(h('button', { class: 'ghost', style: 'margin-top:10px', onclick: function () { reviewCards(cards.filter(function (c) { return c.src === 'Formula'; })); } }, 'Dose formulas only'));
@@ -1103,20 +1375,23 @@ a{color:var(--accent)}
     });
     show(out);
   }
-  function reviewCards(list) {
+  function reviewCards(list, dailyKey) {
     var i = 0, left = list.slice();
     var step = function () {
-      if (i >= left.length) { toast('Done for now'); return viewRules(); }
-      var c = left[i], flipped = false;
-      var $back = h('div', { class: 'back', style: 'display:none' }, c.back);
-      var $btns = h('div', { class: 'stack', style: 'display:none' },
-        h('button', { onclick: function () { var st = cardState(c.id); var b = Math.min(4, st.box + 1); S.cards[c.id] = { box: b, due: addDays(BOX_DAYS[b]) }; save(); i++; step(); } }, 'I knew it'),
-        h('button', { class: 'ghost', onclick: function () { S.cards[c.id] = { box: 0, due: today() }; save(); left.push(c); i++; step(); } }, 'Not yet, show it again'));
-      var card = h('div', { class: 'card flash', onclick: function () { if (flipped) return; flipped = true; $back.style.display = ''; $btns.style.display = ''; $tap.style.display = 'none'; } },
-        h('div', { class: 'soft small' }, c.src + ' · ' + (i + 1) + ' of ' + left.length),
-        h('div', { class: 'front stem' }, c.front), $back);
-      var $tap = h('p', { class: 'center soft small' }, 'Say the answer to yourself, then tap the card.');
-      show(h('button', { class: 'plain', onclick: viewRules }, '‹ My rules'), card, $tap, $btns);
+      if (i >= left.length) { if (dailyKey) markDaily(dailyKey); toast('Done. Well remembered.'); return dailyKey ? go('#home') || route() : viewLearn(); }
+      var c = left[i], strokes = [];
+      var pad = makePad(170, strokes);
+      var $back = h('div', { class: 'why', style: 'display:none' }, c.back);
+      var $after = h('div', { class: 'stack', style: 'display:none' },
+        h('button', { onclick: function () { var st = cardState(c.id); var b = Math.min(4, st.box + 1); S.cards[c.id] = { box: b, due: addDays(BOX_DAYS[b]) }; save(); i++; step(); } }, 'I had it'),
+        h('button', { class: 'ghost', onclick: function () { S.cards[c.id] = { box: 0, due: today() }; save(); left.push(c); i++; step(); } }, 'Not yet, bring it back'));
+      var $show = h('button', { onclick: function () { $back.style.display = ''; $after.style.display = ''; $show.style.display = 'none'; } }, 'Show the answer');
+      show(h('button', { class: 'plain', onclick: function () { go('#learn'); route(); } }, '‹ Stop'),
+        h('div', { class: 'card' }, h('div', { class: 'soft small' }, c.src + ' · ' + (i + 1) + ' of ' + left.length),
+          h('div', { class: 'stem', style: 'font-size:20px;font-weight:650;margin:8px 0' }, c.front),
+          h('div', { class: 'small soft' }, 'Write the answer here from memory, or say it aloud. Writing makes it stick.'),
+          pad.el, h('button', { class: 'plain', onclick: pad.clear }, 'Clear'), $back),
+        $show, $after);
     };
     step();
   }
@@ -1256,9 +1531,10 @@ a{color:var(--accent)}
   }
 
   /* ---------- routing ---------- */
-  var TABS = [['home', '⌂', 'Today'], ['sets', '☰', 'Sets'], ['rules', '✎', 'My rules'], ['progress', '↗', 'Progress'], ['plan', '✓', 'Plan']];
+  var TABS = [['home', '⌂', 'Today'], ['sets', '☰', 'Practice'], ['learn', '✎', 'Learn'], ['progress', '↗', 'Progress'], ['plan', '✓', 'Plan']];
   function route() {
     stopTimer();
+    var sheet = document.querySelector('.sheet'); if (sheet) sheet.remove();
     var hash = location.hash.replace(/^#/, '') || 'home';
     var parts = hash.split('/'), page = parts[0], arg = parts[1] ? decodeURIComponent(parts.slice(1).join('/')) : null;
     if (page === 'restore' && arg) {
@@ -1268,13 +1544,13 @@ a{color:var(--accent)}
     var nav = document.querySelector('nav.tabs');
     nav.style.display = page === 'run' ? 'none' : '';
     Array.prototype.forEach.call(nav.querySelectorAll('a'), function (a) {
-      var on = a.getAttribute('href') === '#' + (page === 'set' || page === 'lesson' ? 'sets' : page === 'result' ? 'progress' : page === 'more' ? 'home' : page);
+      var on = a.getAttribute('href') === '#' + (page === 'set' ? 'sets' : page === 'lesson' || page === 'pic' || page === 'rules' ? 'learn' : page === 'result' ? 'progress' : page === 'more' ? 'home' : page);
       a.className = on ? 'on' : '';
       if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     try {
     ({ home: viewHome, sets: viewSets, set: function () { viewSet(arg); }, run: function () { viewRun(arg); },
-       result: function () { viewResult(parseInt(arg, 10)); }, lesson: function () { viewLesson(arg); }, rules: viewRules, progress: viewProgress, plan: viewPlan, more: viewMore }[page] || viewHome)();
+       result: function () { viewResult(parseInt(arg, 10)); }, lesson: function () { viewLesson(arg); }, learn: viewLearn, pic: function () { viewPicture(arg); }, welcome: function () { viewWelcome(0); }, rules: viewRules, progress: viewProgress, plan: viewPlan, more: viewMore }[page] || viewHome)();
     } catch (e) {
       nav.style.display = '';
       show(h('div', { class: 'card', style: 'border-color:var(--bad)' }, h('b', null, 'This screen hit a problem'),
