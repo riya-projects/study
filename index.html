@@ -1,0 +1,1308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NCLEX">
+<meta name="theme-color" content="#0f766e">
+<title>Ri's NCLEX study</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<style>:root{
+  --bg:#f4f6f8;--card:#fff;--ink:#18212c;--soft:#566273;--line:#d9dfe7;--accent:#0f766e;--accent-ink:#fff;
+  --tint:#e6f4f2;--ok:#15803d;--bad:#b42318;--warn:#a15c07;--warn-bg:#fff6e5;--bad-bg:#fdecea;--ok-bg:#e8f6ec;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#10151b;--card:#1a212b;--ink:#e7ecf2;--soft:#9aa7b8;--line:#2d3744;--accent:#2bb5a8;--accent-ink:#06211f;
+  --tint:#17302f;--ok:#5ad08a;--bad:#ff8a7a;--warn:#f2b653;--warn-bg:#33290f;--bad-bg:#3a1b17;--ok-bg:#15301f;
+}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  padding-top:env(safe-area-inset-top);padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+main{max-width:720px;margin:0 auto;padding:14px 16px 24px}
+h1{font-size:24px;line-height:1.25;margin:6px 0 4px}
+h2{font-size:19px;margin:22px 0 8px}
+h3{font-size:16px;margin:14px 0 6px}
+p{margin:8px 0}
+.soft{color:var(--soft)}.small{font-size:14.5px}.center{text-align:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:10px 0}
+.card.tint{background:var(--tint);border-color:transparent}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.grow{flex:1;min-width:0}
+button,.btn{font:inherit;font-weight:600;border:0;border-radius:12px;padding:13px 16px;background:var(--accent);color:var(--accent-ink);
+  width:100%;min-height:48px;cursor:pointer;text-align:center;display:block;text-decoration:none}
+button.ghost,.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+button.plain{background:transparent;color:var(--accent);width:auto;padding:8px 10px;min-height:40px}
+button.sm{width:auto;padding:9px 14px;min-height:40px;font-size:15.5px}
+button:disabled{opacity:.45}
+.stack>*+*{margin-top:10px}
+.pill{display:inline-block;font-size:13px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--tint);color:var(--accent);white-space:nowrap}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.big{font-size:44px;font-weight:700;line-height:1.1}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;
+  padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:5}
+nav.tabs a{flex:1;text-align:center;font-size:12.5px;color:var(--soft);text-decoration:none;padding:6px 2px;border-radius:10px}
+nav.tabs a b{display:block;font-size:20px;line-height:1.2;font-weight:400}
+nav.tabs a.on{color:var(--accent);font-weight:600}
+.bar{position:sticky;top:0;z-index:4;background:var(--card);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;
+  gap:10px;align-items:center;justify-content:space-between;font-weight:600}
+.bar .t{font-variant-numeric:tabular-nums}
+.q{scroll-margin-top:64px}
+.q .num{font-weight:700;color:var(--accent)}
+.stem{white-space:pre-wrap}
+.case{background:var(--tint);border-radius:10px;padding:10px 12px;white-space:pre-wrap;font-size:16px;margin:8px 0}
+details.case summary{font-weight:600;cursor:pointer}
+label.opt{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1.5px solid var(--line);border-radius:12px;margin:8px 0;cursor:pointer}
+label.opt input{width:22px;height:22px;margin:2px 0 0;flex:none;accent-color:var(--accent)}
+label.opt.on{border-color:var(--accent);background:var(--tint)}
+.matrix{width:100%;border-collapse:collapse;font-size:16px}
+.matrix th,.matrix td{border-bottom:1px solid var(--line);padding:10px 6px;text-align:left;vertical-align:middle}
+.matrix th.c,.matrix td.c{text-align:center;width:64px}
+.matrix input{width:22px;height:22px;accent-color:var(--accent)}
+select,input[type=text],input[type=date],textarea{font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:10px;max-width:100%}
+input[type=text].num{width:150px;font-size:19px}
+textarea{width:100%;min-height:110px;font-size:16px;font-family:ui-monospace,Menlo,monospace}
+.cloze select{margin:4px 2px}
+.grp{margin:12px 0}.grp h4{margin:0 0 2px;font-size:15px;letter-spacing:.03em}
+.meter{height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.kv:last-child{border-bottom:0}
+.right{color:var(--ok);font-weight:600}.wrong{color:var(--bad);font-weight:600}.part{color:var(--warn);font-weight:600}
+.why{border-left:3px solid var(--accent);padding:2px 0 2px 12px;margin:10px 0;white-space:pre-wrap}
+.flash{min-height:230px;display:flex;flex-direction:column;justify-content:center;text-align:center;cursor:pointer}
+.flash .front{font-size:21px;font-weight:650}
+.flash .back{white-space:pre-wrap;margin-top:14px;text-align:left}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13.5px;padding:4px 9px;border-radius:8px;border:1px solid var(--line);color:var(--soft)}
+.chip.done{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:99px;font-size:15px;z-index:9;max-width:90%}
+table.plain{width:100%;border-collapse:collapse;font-size:15.5px}
+table.plain td,table.plain th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.plain td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+svg.chart{width:100%;height:auto;display:block}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main><p style="padding:24px">Loading your study record…</p></main>
+<nav class="tabs" aria-label="Sections"></nav>
+<noscript><p style="padding:24px">This page needs JavaScript turned on.</p></noscript>
+<script src="data.js"></script>
+<script>/* Scoring, result codes and adaptive routing. Pure functions: the app and Nova's
+   ingest tool both use this file, so a set is always marked the same way. */
+(function (root) {
+  'use strict';
+
+  var uniq = function (a) { return a.filter(function (x, i) { return a.indexOf(x) === i; }); };
+
+  function parseNumber(s) {
+    if (s === null || s === undefined) return null;
+    var m = String(s).replace(/,/g, '').match(/-?\d*\.?\d+/);
+    return m ? parseFloat(m[0]) : null;
+  }
+
+  function isAnswered(item, r) {
+    if (r === null || r === undefined) return false;
+    switch (item.type) {
+      case 'single': return typeof r === 'string' && r !== '';
+      case 'multi': return Array.isArray(r) && r.length > 0;
+      case 'matrix': return item.rows.every(function (row) { return r[row.k]; });
+      case 'cloze': return item.blanks.every(function (b, i) { return r[i]; });
+      case 'bowtie': return item.groups.every(function (g, i) { return r[i] && r[i].length === g.pick; });
+      case 'numeric': return parseNumber(r) !== null;
+    }
+    return false;
+  }
+
+  /* Points for one item, 0 to 1. Rules are the ones printed on Ri's sets. */
+  function score(item, r) {
+    if (r === null || r === undefined) return 0;
+    switch (item.type) {
+      case 'single':
+        return r === item.ans[0] ? 1 : 0;
+      case 'multi': {
+        var picks = uniq(Array.isArray(r) ? r : []);
+        var right = picks.filter(function (k) { return item.ans.indexOf(k) >= 0; }).length;
+        var wrong = picks.length - right;
+        return Math.max(0, (right - wrong) / item.ans.length);
+      }
+      case 'matrix': {
+        var ok = item.rows.filter(function (row) { return r[row.k] === row.ans; }).length;
+        return ok / item.rows.length;
+      }
+      case 'cloze': {
+        var okb = item.blanks.filter(function (b, i) { return r[i] === b.ans; }).length;
+        return okb / item.blanks.length;
+      }
+      case 'bowtie': {
+        var total = 0, got = 0;
+        item.groups.forEach(function (g, i) {
+          total += g.ans.length;
+          var p = uniq((r[i] || []).slice(0, g.pick));
+          got += p.filter(function (k) { return g.ans.indexOf(k) >= 0; }).length;
+        });
+        return total ? got / total : 0;
+      }
+      case 'numeric': {
+        var v = parseNumber(r);
+        if (v === null) return 0;
+        var targets = [item.ans].concat(item.accept || []);
+        var tol = item.tol || 0;
+        return targets.some(function (t) { return Math.abs(v - t) <= tol + 1e-9; }) ? 1 : 0;
+      }
+    }
+    return 0;
+  }
+
+  /* For a wrong numeric answer: the trap she fell into, if the key names it. */
+  function trapFor(item, r) {
+    if (item.type !== 'numeric' || !item.traps) return null;
+    var v = parseNumber(r);
+    if (v === null) return null;
+    for (var i = 0; i < item.traps.length; i++) {
+      if (Math.abs(v - item.traps[i].v) <= 1e-9) return item.traps[i].why;
+    }
+    return null;
+  }
+
+  /* One response as a short string, for the result code and for display. */
+  function encodeResp(item, r) {
+    if (r === null || r === undefined) return '';
+    switch (item.type) {
+      case 'single': return r;
+      case 'multi': return r.slice().sort().join(',');
+      case 'matrix': return item.rows.map(function (row) { return r[row.k] || '-'; }).join(',');
+      case 'cloze': return item.blanks.map(function (b, i) { return r[i] || '-'; }).join(',');
+      case 'bowtie': return item.groups.map(function (g, i) { return (r[i] || []).slice().sort().join(','); }).join(';');
+      case 'numeric': return String(r).trim();
+    }
+    return '';
+  }
+
+  function decodeResp(item, s) {
+    if (s === '' || s === null || s === undefined) return null;
+    switch (item.type) {
+      case 'single': return s;
+      case 'multi': return s.split(',').filter(Boolean);
+      case 'matrix': { var o = {}; s.split(',').forEach(function (v, i) { if (v !== '-' && item.rows[i]) o[item.rows[i].k] = v; }); return o; }
+      case 'cloze': return s.split(',').map(function (v) { return v === '-' ? null : v; });
+      case 'bowtie': return s.split(';').map(function (g) { return g.split(',').filter(Boolean); });
+      case 'numeric': return s;
+    }
+    return null;
+  }
+
+  /* The correct answer as text she can read. */
+  function answerText(item) {
+    var opt = function (opts, k) { var o = (opts || []).filter(function (x) { return x.k === k; })[0]; return o ? k + '. ' + o.t : k; };
+    switch (item.type) {
+      case 'single':
+      case 'multi': return item.ans.map(function (k) { return opt(item.opts, k); }).join('\n');
+      case 'matrix': return item.rows.map(function (row) {
+        var c = item.cols.filter(function (x) { return x.k === row.ans; })[0];
+        return row.t + ': ' + (c ? c.t : row.ans);
+      }).join('\n');
+      case 'cloze': return item.blanks.map(function (b, i) {
+        var o = b.opts.filter(function (x) { return x.k === b.ans; })[0];
+        return 'Blank ' + (i + 1) + ': ' + (o ? o.t : b.ans);
+      }).join('\n');
+      case 'bowtie': return item.groups.map(function (g) {
+        return g.name + ': ' + g.ans.map(function (k) { var o = g.opts.filter(function (x) { return x.k === k; })[0]; return o ? o.t : k; }).join('; ');
+      }).join('\n');
+      case 'numeric': return item.ans + (item.unit ? ' ' + item.unit : '');
+    }
+    return '';
+  }
+
+  /* Mark a whole attempt. answers: {itemId: response}. */
+  function markAttempt(items, answers) {
+    var out = { score: 0, max: items.length, per: {}, byCat: {}, byType: {}, missed: [], partial: [], blank: [] };
+    items.forEach(function (it) {
+      var r = answers[it.id];
+      var answered = isAnswered(it, r) || (it.type === 'multi' && Array.isArray(r) && r.length > 0);
+      var pts = score(it, r);
+      out.per[it.id] = pts;
+      out.score += pts;
+      var add = function (bag, key) {
+        if (!bag[key]) bag[key] = { score: 0, max: 0 };
+        bag[key].score += pts; bag[key].max += 1;
+      };
+      add(out.byCat, it.cat || 'Uncategorised');
+      add(out.byType, it.type === 'multi' ? 'Select-all' : it.calc ? 'Calculation' : it.type === 'single' ? 'Single answer' : 'Next-Gen (matrix, cloze, bow-tie)');
+      if (it.calc && it.type === 'multi') add(out.byType, 'Calculation');
+      var blank = r === null || r === undefined || r === '' || (Array.isArray(r) && r.length === 0);
+      if (blank) out.blank.push(it.id);
+      else if (pts === 0) out.missed.push(it.id);
+      else if (pts < 1) out.partial.push(it.id);
+    });
+    out.pct = out.max ? Math.round(1000 * out.score / out.max) / 10 : 0;
+    return out;
+  }
+
+  /* Result code: what she sends to Nova so the record there stays complete. */
+  function b64uEncode(str) {
+    var b = (typeof btoa === 'function') ? btoa(unescape(encodeURIComponent(str))) : Buffer.from(str, 'utf8').toString('base64');
+    return b.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function b64uDecode(s) {
+    s = s.replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    return (typeof atob === 'function') ? decodeURIComponent(escape(atob(s))) : Buffer.from(s, 'base64').toString('utf8');
+  }
+  function encodeResult(attempt, itemsById) {
+    var a = {};
+    Object.keys(attempt.answers).forEach(function (id) {
+      var it = itemsById[id];
+      if (it) { var e = encodeResp(it, attempt.answers[id]); if (e !== '') a[id] = e; }
+    });
+    var body = { v: 1, s: attempt.set, m: attempt.mode, t: attempt.finished, d: attempt.secs, o: attempt.order || null, a: a };
+    body.p = attempt.pct;                               // her phone's own mark, to spot a bank that differs
+    if (attempt.of) body.r = attempt.of;                // what a retry or mix was built from
+    if (attempt.days) body.g = attempt.days;            // topic days she has done
+    if (attempt.feel) body.f = attempt.feel;            // how the set felt: easy | right | hard
+    if (attempt.short) body.k = 1;                      // she chose the short version
+    if (attempt.times) body.x = attempt.times;          // seconds per question, one-at-a-time modes only
+    return 'RS1.' + b64uEncode(JSON.stringify(body));
+  }
+  function decodeResult(code, itemsById) {
+    var m = String(code).match(/RS1\.([A-Za-z0-9_-]+)/);
+    if (!m) throw new Error('No result code found');
+    var body = JSON.parse(b64uDecode(m[1]));
+    if (body.v !== 1) throw new Error('Unknown result version');
+    var answers = {};
+    Object.keys(body.a).forEach(function (id) {
+      if (itemsById[id]) answers[id] = decodeResp(itemsById[id], body.a[id]);
+    });
+    return { set: body.s, mode: body.m, finished: body.t, secs: body.d, order: body.o, answers: answers, pct: body.p, of: body.r || null, days: body.g || null, feel: body.f || null, short: !!body.k, times: body.x || null };
+  }
+
+  /* Adaptive test. Rules are the routing note in the adaptive bank:
+     start at level 3; right (0.5+) goes up a level, wrong goes down; a case is six
+     items in a row; stop from item 30 once the last ten average 3.5+ or 2.5-, or at 50. */
+  var ADAPT = { min: 30, max: 50, caseA: { level: 3, from: 10 }, caseB: { level: 4, from: 20 } };
+
+  function adaptiveInit(items) {
+    var levels = {}, cases = {}, caseOrder = [];
+    items.forEach(function (it) {
+      if (it.caseId) {
+        if (!cases[it.caseId]) { cases[it.caseId] = { id: it.caseId, level: it.level, items: [] }; caseOrder.push(it.caseId); }
+        cases[it.caseId].items.push(it.id);
+      } else {
+        (levels[it.level] = levels[it.level] || []).push(it.id);
+      }
+    });
+    return { levels: levels, cases: cases, caseOrder: caseOrder };
+  }
+
+  /* delivered: [{id, level, pts, caseId}] in order. Returns {done} or {id, note}. */
+  function adaptiveNext(pool, delivered) {
+    var n = delivered.length;
+    var used = {}; delivered.forEach(function (d) { used[d.id] = true; });
+    var last = delivered[n - 1];
+
+    // inside a case block: carry on to its next item
+    if (last && last.caseId) {
+      var blk = pool.cases[last.caseId].items;
+      var nextInBlock = blk.filter(function (id) { return !used[id]; })[0];
+      if (nextInBlock) return { id: nextInBlock };          // a case always runs its six items
+    }
+
+    if (n >= ADAPT.max) return { done: true, why: 'max' };
+    if (n >= ADAPT.min) {
+      var lastTen = delivered.slice(-10);
+      var avg = lastTen.reduce(function (s, d) { return s + d.level; }, 0) / lastTen.length;
+      if (avg >= 3.5) return { done: true, why: 'above' };
+      if (avg <= 2.5) return { done: true, why: 'below' };
+    }
+
+    var level = 3, dir = 1;
+    if (last) {
+      if (last.caseId) {
+        var c = pool.cases[last.caseId];
+        var pts = delivered.filter(function (d) { return d.caseId === last.caseId; }).reduce(function (s, d) { return s + d.pts; }, 0);
+        dir = pts >= c.items.length / 2 ? 1 : -1;
+        level = c.level + dir;
+      } else {
+        dir = last.pts >= 0.5 ? 1 : -1;
+        level = last.level + dir;
+      }
+      level = Math.max(1, Math.min(5, level));
+    }
+
+    // case blocks start the first time she is routed to their level late enough
+    var caseDone = function (id) { return pool.cases[id].items.some(function (x) { return used[x]; }); };
+    var pos = n + 1;
+    for (var i = 0; i < pool.caseOrder.length; i++) {
+      var cs = pool.cases[pool.caseOrder[i]];
+      var from = i === 0 ? ADAPT.caseA.from : ADAPT.caseB.from;
+      if (!caseDone(cs.id) && cs.level === level && pos >= from && pos + cs.items.length - 1 <= ADAPT.max) return { id: cs.items[0] };
+    }
+
+    var free = function (L) { return (pool.levels[L] || []).filter(function (id) { return !used[id]; })[0]; };
+    var pick = free(level), note = null;
+    if (!pick) {
+      var order = [];
+      for (var s = 1; s <= 4; s++) order.push(level + dir * s);
+      for (s = 1; s <= 4; s++) order.push(level - dir * s);
+      for (var j = 0; j < order.length && !pick; j++) {
+        if (order[j] >= 1 && order[j] <= 5) { pick = free(order[j]); if (pick) note = 'level ' + level + ' used up, gave level ' + order[j]; }
+      }
+    }
+    if (!pick) return { done: true, why: 'bank used up' };
+    return { id: pick, note: note };
+  }
+
+  function adaptiveReport(delivered) {
+    var last15 = delivered.slice(-15).filter(function (d) { return d.pts >= 0.5; });
+    var ability = last15.length ? last15.reduce(function (s, d) { return s + d.level; }, 0) / last15.length : null;
+    var reading = ability === null ? 'not enough right answers to estimate'
+      : ability >= 3.5 ? 'handling NCLEX-level analysis well'
+      : ability >= 3.0 ? 'near the target, keep going'
+      : 'more practice at level 3 needed before the next mock';
+    return { ability: ability === null ? null : Math.round(ability * 100) / 100, reading: reading, path: delivered.map(function (d) { return d.level; }) };
+  }
+
+  /* Today's mix: a short set built for her from questions she has already met, so no new set is spoiled.
+     stats: {itemId: {last: 0..1 points at the last try, tries, day: 'YYYY-MM-DD' of the last try}}.
+     weak:  {cat: {name: pct}, type: {multi: pct, calc: pct, ngn: pct}} with pct 0..100.
+     Misses come first, then questions from her weakest areas that she has not seen for longest.
+     The same day always gives the same mix, so she can stop and come back. */
+  function buildMix(items, stats, weak, day, n) {
+    n = n || 15;
+    var seed = 0; String(day).split('').forEach(function (c) { seed = (seed * 31 + c.charCodeAt(0)) >>> 0; });
+    var rnd = function () { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    var need = function (pct) { return pct === undefined || pct === null ? 0.3 : Math.max(0, (85 - pct) / 85); };
+    var scored = items.filter(function (it) { return stats[it.id]; }).map(function (it) {
+      var st = stats[it.id];
+      var w = (1 - st.last) * 3;                                   // still wrong or partly wrong
+      w += need((weak.cat || {})[it.cat]) * 1.5;                   // weak exam category
+      if (it.type === 'multi') w += need((weak.type || {}).multi);
+      if (it.calc) w += need((weak.type || {}).calc) * 1.5;
+      if (it.type === 'matrix' || it.type === 'cloze' || it.type === 'bowtie') w += need((weak.type || {}).ngn);
+      if (st.day === day) w -= 5;                                  // done today already
+      else if (st.last >= 1 && st.tries >= 2) w -= 1;              // right twice: let it rest
+      return { it: it, w: w + rnd() * 0.5 };
+    });
+    scored.sort(function (a, b) { return b.w - a.w; });
+    var out = [], perCase = {}, perTopic = {};
+    for (var i = 0; i < scored.length && out.length < n; i++) {
+      var it = scored[i].it;
+      if (it.caseId) { if (perCase[it.caseId]) continue; perCase[it.caseId] = 1; if (it.label && /item [2-6]\b/.test(it.label)) continue; }
+      perTopic[it.topic] = (perTopic[it.topic] || 0) + 1;
+      if (perTopic[it.topic] > Math.ceil(n / 3)) continue;         // interleave: no more than a third on one topic
+      out.push(it.id);
+    }
+    return out;
+  }
+
+  var Core = {
+    buildMix: buildMix,
+    parseNumber: parseNumber, isAnswered: isAnswered, score: score, trapFor: trapFor,
+    encodeResp: encodeResp, decodeResp: decodeResp, answerText: answerText, markAttempt: markAttempt,
+    encodeResult: encodeResult, decodeResult: decodeResult, b64uEncode: b64uEncode, b64uDecode: b64uDecode,
+    adaptiveInit: adaptiveInit, adaptiveNext: adaptiveNext, adaptiveReport: adaptiveReport, ADAPT: ADAPT
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = Core;
+  else root.Core = Core;
+})(typeof self !== 'undefined' ? self : this);
+
+/* Ri's study app. No server: everything she does is saved on her phone, and each
+   finished set makes a short result message she sends to Nova so the record there
+   is complete and can restore her phone if it is ever cleared. */
+(function () {
+  'use strict';
+  var D = window.DATA, C = window.Core;
+  var BANK = D.bank, EXTRA = D.extras, HIST = { attempts: [], categories: [] };
+  var itemsById = {}, setsById = {};
+  BANK.items.forEach(function (it) { itemsById[it.id] = it; });
+  BANK.sets.forEach(function (s) { setsById[s.id] = s; });
+
+  /* ---------- state ---------- */
+  var KEY = 'ristudy.v1';
+  var S = { attempts: [], drafts: {}, cards: {}, days: {}, exam: null, v: 1 };
+  var storageOk = true;
+  function load() {
+    try { var raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); }
+    catch (e) { storageOk = false; }
+    (EXTRA.doneDays || []).forEach(function (t) { if (!(t in S.days)) S.days[t] = true; });
+    if (S.hist) HIST = S.hist;
+    S.drafts = S.drafts || {}; S.attempts = S.attempts || [];
+    // questions can be corrected or withdrawn after she answered them: drop what no longer exists, mark again with today's key
+    Object.keys(S.drafts).forEach(function (k) {
+      var d = S.drafts[k]; d.ids = (d.ids || []).filter(function (id) { return itemsById[id]; });
+      if (d.current && !itemsById[d.current]) d.current = null;
+      if (!d.ids.length) delete S.drafts[k];
+    });
+    S.attempts.forEach(remark);
+    autoDays();
+  }
+  function attemptIds(a) {
+    return (a.order || (setsById[a.set] ? setsById[a.set].items : Object.keys(a.per || {}))).filter(function (id) { return itemsById[id]; });
+  }
+  function remark(a) {
+    var m = C.markAttempt(attemptIds(a).map(function (id) { return itemsById[id]; }), a.answers || {});
+    if (m.max) { a.per = m.per; a.score = m.score; a.max = m.max; a.pct = m.pct; }
+  }
+  /* a topic day is done once every set written for it has been attempted */
+  function autoDays() {
+    EXTRA.queue.forEach(function (q) {
+      var sets = BANK.sets.filter(function (s) { return (s.t || EXTRA.setDay[s.id]) === q.t && s.kind !== 'retry'; });
+      if (sets.length && !(q.t in S.days) && sets.every(function (s) { return S.attempts.some(function (a) { return a.set === s.id; }); })) S.days[q.t] = true;
+    });
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { storageOk = false; }
+  }
+
+  /* ---------- small helpers ---------- */
+  function h(tag, attrs) {
+    var el = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === 'class') el.className = v;
+      else if (k.slice(0, 2) === 'on') el.addEventListener(k.slice(2), v);
+      else if (k === 'checked' || k === 'disabled' || k === 'open' || k === 'value') el[k] = v;
+      else el.setAttribute(k, v);
+    });
+    for (var i = 2; i < arguments.length; i++) add(el, arguments[i]);
+    return el;
+  }
+  function add(el, c) {
+    if (c === null || c === undefined || c === false) return;
+    if (Array.isArray(c)) c.forEach(function (x) { add(el, x); });
+    else el.appendChild(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(String(c)) : c);
+  }
+  var $main = null;
+  function show() {
+    $main.innerHTML = '';
+    for (var i = 0; i < arguments.length; i++) add($main, arguments[i]);
+    window.scrollTo(0, 0);
+  }
+  function toast(msg) {
+    var t = h('div', { class: 'toast', role: 'status' }, msg);
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 2600);
+  }
+  function go(hash) { location.hash = hash; }
+  function fmtPct(x) { return (Math.round(x * 10) / 10).toString().replace(/\.0$/, '') + '%'; }
+  function fmtPts(x) { return (Math.round(x * 10) / 10).toString(); }
+  function fmtTime(secs) {
+    var m = Math.floor(secs / 60), s = secs % 60, hh = Math.floor(m / 60);
+    return (hh ? hh + ':' + String(m % 60).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0');
+  }
+  function fmtDate(iso) {
+    // a plain date has no time zone; read it as midday here so it never slips a day
+    var d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso + 'T12:00:00' : iso);
+    return isNaN(d) ? iso : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
+  function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function addDays(n) { var d = new Date(); d.setDate(d.getDate() + n); return ymd(d); }
+  function kindLabel(s) {
+    return { baseline: 'Baseline', set: 'Daily set', retry: 'Retry set', drill: 'Calculation drill', mock: 'Mock test', adaptive: 'Adaptive test' }[s.kind] || 'Set';
+  }
+
+  /* ---------- records ---------- */
+  function attemptsFor(setId) { return S.attempts.filter(function (a) { return a.set === setId; }); }
+  function earlier(setId) { return (HIST.attempts || []).filter(function (a) { return a.set === setId; }); }
+  function setStatus(s) {
+    var mine = attemptsFor(s.id), old = earlier(s.id);
+    if (S.drafts[s.id]) return { text: 'In progress', cls: 'warn' };
+    if (mine.length) return { text: fmtPct(mine[mine.length - 1].pct), cls: 'ok' };
+    if (old.length) return { text: fmtPct(old[old.length - 1].pct) + ' earlier', cls: 'ok' };
+    return { text: 'New', cls: '' };
+  }
+  function allResults() {
+    var rows = (HIST.attempts || []).map(function (a) {
+      var s = setsById[a.set];
+      return { date: a.date, title: s ? s.title : (a.title || a.set), pct: a.pct, score: a.score, max: a.max, secs: a.minutes ? a.minutes * 60 : null, old: true };
+    });
+    S.attempts.forEach(function (a, i) {
+      rows.push({ practice: a.set === 'retry', date: ymd(new Date(a.finished)), title: a.title, pct: a.pct, score: a.score, max: a.max, secs: a.secs, idx: i });
+    });
+    rows.sort(function (x, y) { return x.date < y.date ? -1 : x.date > y.date ? 1 : 0; });
+    return rows;
+  }
+
+  /* ---------- rules (flashcards) ---------- */
+  function allCards() {
+    var cards = EXTRA.cards.map(function (c) { return { id: c.id, front: c.front, back: c.back, src: 'Rule' }; });
+    EXTRA.formulas.forEach(function (f) { cards.push({ id: f.id, front: f.what, back: f.formula + '\n\nExample: ' + f.example, src: 'Formula' }); });
+    var seen = {};
+    S.attempts.forEach(function (a) {
+      Object.keys(a.per).forEach(function (id) {
+        var it = itemsById[id];
+        if (!it || a.per[id] >= 1 || seen[id]) return;
+        seen[id] = true;
+        cards.push({ id: 'M:' + id, front: it.stem, back: C.answerText(it) + '\n\n' + (it.rule || it.why), src: 'From a miss' });
+      });
+    });
+    return cards;
+  }
+  var BOX_DAYS = [0, 1, 3, 7, 14];
+  function cardState(id) { return S.cards[id] || { box: 0, due: '0000-00-00' }; }
+  function dueCards() { var t = today(); return allCards().filter(function (c) { return cardState(c.id).due <= t; }); }
+
+  /* ---------- home ---------- */
+  function nextDay() { return EXTRA.queue.filter(function (q) { return !S.days[q.t]; })[0]; }
+  function setsForDay(t) {
+    return BANK.sets.filter(function (s) { return (s.t || EXTRA.setDay[s.id]) === t; });
+  }
+  function untouched(s) { return !attemptsFor(s.id).length && !earlier(s.id).length; }
+
+  function viewHome() {
+    var out = [h('h1', null, 'Hi Ri')];
+    if (!storageOk) out.push(h('div', { class: 'card', style: 'border-color:var(--bad)' },
+      'This browser is not saving your work (private mode?). Open the page in normal Safari and add it to your Home Screen.'));
+
+    if (S.exam) {
+      var days = Math.ceil((new Date(S.exam + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 864e5);
+      out.push(h('p', { class: 'soft' }, days > 0 ? days + ' days to your exam (' + fmtDate(S.exam) + ')' : 'Exam day: ' + fmtDate(S.exam)));
+    } else {
+      out.push(h('p', { class: 'soft' }, 'Exam about 6 to 8 December. ', h('a', { href: '#more' }, 'Set the date')));
+    }
+
+    var standalone = window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    if (!standalone && !S.hintOff) out.push(h('div', { class: 'card tint' },
+      h('b', null, 'Put this on your Home Screen'),
+      h('p', { class: 'small' }, 'Do this before your first set. In Safari tap the Share button, then "Add to Home Screen", and always open it from that icon. It works without signal and keeps your record safe.'),
+      h('button', { class: 'plain', onclick: function () { S.hintOff = true; save(); route(); } }, 'Done, hide this')));
+
+    var drafts = Object.keys(S.drafts);
+    if (drafts.length) {
+      var d = S.drafts[drafts[0]];
+      out.push(h('div', { class: 'card tint' },
+        h('div', { class: 'soft small' }, 'You stopped part-way'),
+        h('h3', null, d.title),
+        h('p', { class: 'small' }, Object.keys(d.answers).length + ' of ' + (d.mode === 'adaptive' ? 'up to 50' : d.ids.length) + ' answered'),
+        h('button', { onclick: function () { go('#run/' + encodeURIComponent(drafts[0])); } }, 'Carry on')));
+    }
+
+    var nd = nextDay();
+    if (nd) {
+      var ready = setsForDay(nd.t).filter(untouched);
+      var waiting = BANK.sets.filter(function (s) { return untouched(s) && S.days[s.t || EXTRA.setDay[s.id]]; });
+      out.push(h('div', { class: 'card' },
+        h('div', { class: 'soft small' }, 'Up next in your plan'),
+        h('h3', null, nd.t + ': ' + nd.title),
+        h('p', { class: 'small soft' }, 'Saunders ' + nd.saunders + (nd.dense ? ' · dense topic, lighter question load' : '')),
+        ready.length
+          ? ready.map(function (s) { return h('button', { onclick: function () { go('#set/' + s.id); } }, 'Start: ' + s.title); })
+          : h('p', { class: 'small' }, 'The question set for this topic is being written and checked. It appears here when it is ready.'),
+        h('button', { class: 'plain', onclick: function () { S.days[nd.t] = true; save(); route(); toast(nd.t + ' ticked'); } }, 'Tick ' + nd.t + ' as done')));
+      if (waiting.length) {
+        out.push(h('h2', null, 'Ready and not done yet'));
+        waiting.forEach(function (s) { out.push(setRow(s)); });
+      }
+    }
+
+    var mixDone = S.attempts.some(function (a) { return a.of === 'mix:' + today(); });
+    out.push(h('div', { class: 'card row' },
+      h('div', { class: 'grow' }, h('b', null, "Today's mix"), h('div', { class: 'small soft' }, mixDone ? 'Done today. A new one tomorrow.' : '15 questions picked from your misses and weak areas · about 20 min')),
+      h('button', { class: 'sm' + (mixDone ? ' ghost' : ''), onclick: startMix }, S.drafts['mix:' + today()] ? 'Carry on' : mixDone ? 'Again' : 'Start')));
+
+    var due = dueCards().length;
+    out.push(h('div', { class: 'card row' },
+      h('div', { class: 'grow' }, h('b', null, 'My rules'), h('div', { class: 'small soft' }, due ? due + ' to review today' : 'All reviewed for today')),
+      h('button', { class: 'sm', onclick: function () { go('#rules'); } }, due ? 'Review' : 'Open')));
+
+    var res = allResults();
+    if (res.length) {
+      var last = res.filter(function (r) { return !r.practice; }).pop() || res[res.length - 1];
+      out.push(h('div', { class: 'card row' },
+        h('div', { class: 'grow' }, h('b', null, 'Last result: ' + fmtPct(last.pct)), h('div', { class: 'small soft' }, last.title + ' · ' + fmtDate(last.date))),
+        h('button', { class: 'sm ghost', onclick: function () { go('#progress'); } }, 'Progress')));
+    }
+    var unsent = S.attempts.filter(function (a) { return !a.sent; }).length;
+    if (unsent) out.push(h('div', { class: 'card', style: 'border-color:var(--warn)' },
+      h('b', null, unsent + (unsent === 1 ? ' result' : ' results') + ' not sent to Nova yet'),
+      h('p', { class: 'small soft' }, 'Sending keeps a second copy of your record, so nothing is lost if your phone is cleared.'),
+      h('button', { class: 'ghost', onclick: function () { go('#more'); } }, 'Send now')));
+    out.push(h('p', { class: 'center' }, h('a', { href: '#more' }, 'Exam date, sending results and backup')));
+    show(out);
+  }
+
+  /* ---------- sets ---------- */
+  function setRow(s) {
+    var st = setStatus(s);
+    return h('div', { class: 'card row', onclick: function () { go('#set/' + s.id); }, style: 'cursor:pointer' },
+      h('div', { class: 'grow' },
+        h('b', null, s.title),
+        h('div', { class: 'small soft' }, kindLabel(s) + ' · ' + (s.kind === 'adaptive' ? '30 to 50 of ' + s.items.length : s.items.length) + ' questions')),
+      h('span', { class: 'pill ' + st.cls }, st.text));
+  }
+  function viewSets() {
+    var out = [h('h1', null, 'Question sets'), h('p', { class: 'soft small' }, 'Every set you have been given is here. New ones are added as they are written.')];
+    var groups = [['New', function (s) { return untouched(s); }], ['Done', function (s) { return !untouched(s); }]];
+    groups.forEach(function (g) {
+      var list = BANK.sets.filter(g[1]);
+      if (!list.length) return;
+      out.push(h('h2', null, g[0]));
+      list.forEach(function (s) { out.push(setRow(s)); });
+    });
+    if ((EXTRA.lessons || []).length) {
+      out.push(h('h2', null, 'Short lessons'));
+      EXTRA.lessons.forEach(function (l) {
+        out.push(h('div', { class: 'card row', style: 'cursor:pointer', onclick: function () { go('#lesson/' + l.id); } },
+          h('div', { class: 'grow' }, h('b', null, l.title), h('div', { class: 'small soft' }, 'About ' + (l.minutes || 5) + ' min · ' + fmtDate(l.date))), h('span', { class: 'soft' }, '›')));
+      });
+    }
+    show(out);
+  }
+  function viewLesson(id) {
+    var l = (EXTRA.lessons || []).filter(function (x) { return x.id === id; })[0];
+    if (!l) return viewSets();
+    var out = [h('button', { class: 'plain', onclick: function () { go('#sets'); } }, '‹ Sets and lessons'), h('h1', null, l.title)];
+    (l.sections || []).forEach(function (sec) {
+      out.push(h('div', { class: 'card' }, sec.h ? h('h3', { style: 'margin-top:0' }, sec.h) : null, h('div', { class: 'stem' }, sec.body)));
+    });
+    if (l.practice) out.push(h('button', { onclick: function () { startRun('lesson:' + l.id, 'Practice: ' + l.title, l.practice, 'page'); } }, 'Try ' + l.practice.length + ' questions on this'));
+    show(out);
+  }
+  function viewSet(id) {
+    var s = setsById[id];
+    if (!s) return viewSets();
+    var mine = attemptsFor(id), old = earlier(id), draft = S.drafts[id];
+    var adaptive = s.kind === 'adaptive';
+    var mins = adaptive ? 90 : Math.round(s.items.length * 1.75);
+    var out = [
+      h('button', { class: 'plain', onclick: function () { go('#sets'); } }, '‹ All sets'),
+      h('h1', null, s.title),
+      h('p', { class: 'soft' }, kindLabel(s) + ' · ' + (adaptive ? '30 to 50 questions, picked by how you answer' : s.items.length + ' questions') + ' · about ' + mins + ' min'),
+      s.difficulty ? h('p', null, h('span', { class: 'pill' }, 'Difficulty: ' + s.difficulty)) : null
+    ];
+    if (draft) out.push(h('button', { onclick: function () { go('#run/' + encodeURIComponent(id)); } }, 'Carry on where you stopped'));
+    var start = function (mode) { return function () { startRun(id, s.title, s.items.slice(), mode); }; };
+    if (adaptive) {
+      out.push(h('div', { class: 'card' },
+        h('p', null, 'Works like the real exam: one question at a time, no going back. A right answer brings a harder question, a wrong answer an easier one. It stops between 30 and 50 questions. 90-minute timer.'),
+        h('button', { onclick: start('adaptive') }, draft ? 'Start again from question 1' : 'Start the test')));
+    } else {
+      out.push(h('div', { class: 'card stack' },
+        h('button', { onclick: start('page') }, draft ? 'Start again: all questions on one page' : 'Start: all questions on one page'),
+        h('button', { class: 'ghost', onclick: start('exam') }, 'Exam mode: one at a time, no going back'),
+        s.items.length >= 30 ? h('button', { class: 'ghost', onclick: function () { startShort(s); } }, 'Tired or short on time: 20 questions') : null,
+        h('p', { class: 'small soft' }, 'Answers and explanations show only after you finish. Your work is saved as you go, so you can stop and come back.')));
+    }
+    if (mine.length || old.length) {
+      out.push(h('h2', null, 'Your results'));
+      old.forEach(function (a) {
+        out.push(h('div', { class: 'card' },
+          h('div', { class: 'row' }, h('b', null, fmtPct(a.pct) + '  (' + fmtPts(a.score) + ' of ' + a.max + ')'), h('span', { class: 'soft small' }, fmtDate(a.date) + ' · before the app')),
+          a.missed && a.missed.length ? h('p', { class: 'small soft' }, 'Missed: ' + a.missed.join(', ')) : null,
+          (a.missed || []).length ? h('button', { class: 'ghost', onclick: function () { retryFromNumbers(s, a); } }, 'Retry the ones I missed') : null));
+      });
+      mine.forEach(function (a) {
+        var idx = S.attempts.indexOf(a);
+        out.push(h('div', { class: 'card row', style: 'cursor:pointer', onclick: function () { go('#result/' + idx); } },
+          h('b', null, fmtPct(a.pct) + '  (' + fmtPts(a.score) + ' of ' + a.max + ')'), h('span', { class: 'soft small' }, fmtDate(a.finished) + ' ›')));
+      });
+    }
+    show(out);
+  }
+  /* 20 questions from a longer set: whole case studies kept together, her weak types first. */
+  function startShort(s) {
+    var w = weakness(), ids = [], cases = {};
+    var rank = s.items.map(function (id, i) {
+      var it = itemsById[id];
+      var v = (it.calc ? 2 : 0) + (it.type === 'multi' ? 1.5 : 0) + (it.caseId ? 1 : 0) + Math.max(0, (85 - (w.cat[it.cat] === undefined ? 60 : w.cat[it.cat])) / 85);
+      return { id: id, i: i, v: v, c: it.caseId };
+    }).sort(function (x, y) { return y.v - x.v; });
+    rank.forEach(function (r) {
+      if (ids.length >= 20 || ids.indexOf(r.id) >= 0) return;
+      if (r.c) { if (cases[r.c]) return; cases[r.c] = 1; s.items.forEach(function (id) { if (itemsById[id].caseId === r.c) ids.push(id); }); }
+      else ids.push(r.id);
+    });
+    ids.sort(function (x, y) { return s.items.indexOf(x) - s.items.indexOf(y); });
+    if (S.drafts[s.id] && Object.keys(S.drafts[s.id].answers).length) return startRun(s.id, s.title, s.items.slice(), 'page');
+    S.drafts[s.id] = { key: s.id, title: s.title + ' (short)', ids: ids, mode: 'page', short: true, answers: {}, started: new Date().toISOString(), elapsed: 0, idx: 0, delivered: [] };
+    save(); go('#run/' + encodeURIComponent(s.id));
+  }
+  /* What she is weak at right now, from everything recorded on this phone plus her earlier baseline. */
+  function weakness() {
+    var cat = {}, type = {}, stats = {}, bag = {}, tb = {};
+    (HIST.categories || []).forEach(function (c) { cat[c.cat] = c.pct; });
+    (HIST.attempts || []).forEach(function (a) {
+      var s = setsById[a.set]; if (!s) return;
+      var bad = {}; (a.missed || []).concat(a.blank || [], Object.keys(a.partial || {})).forEach(function (n) { bad[String(n)] = 1; });
+      s.items.forEach(function (id) { var it = itemsById[id]; if (a.set === 'CAT' && !bad[String(it.n)]) return; stats[id] = { last: bad[String(it.n)] ? 0 : 1, tries: 1, day: a.date }; });
+    });
+    S.attempts.forEach(function (a) {
+      Object.keys(a.per).forEach(function (id) {
+        var it = itemsById[id]; if (!it) return;
+        stats[id] = { last: a.per[id], tries: ((stats[id] || {}).tries || 0) + 1, day: ymd(new Date(a.finished)) };
+        var bump = function (b, k) { b[k] = b[k] || { s: 0, n: 0 }; b[k].s += a.per[id]; b[k].n += 1; };
+        bump(bag, it.cat);
+        if (it.type === 'multi') bump(tb, 'multi'); if (it.calc) bump(tb, 'calc');
+        if (['matrix', 'cloze', 'bowtie'].indexOf(it.type) >= 0) bump(tb, 'ngn');
+      });
+    });
+    Object.keys(bag).forEach(function (k) { if (bag[k].n >= 5) cat[k] = 100 * bag[k].s / bag[k].n; });
+    Object.keys(tb).forEach(function (k) { if (tb[k].n >= 4) type[k] = 100 * tb[k].s / tb[k].n; });
+    return { cat: cat, type: type, stats: stats };
+  }
+  function startMix() {
+    var w = weakness(), key = 'mix:' + today();
+    if (S.drafts[key]) return go('#run/' + encodeURIComponent(key));
+    var ids = C.buildMix(BANK.items, w.stats, w, today(), 15);
+    if (ids.length < 5) return toast('Do one full set first; then this builds itself from your results');
+    startRun(key, "Today's mix", ids, 'page');
+  }
+
+  function retryFromNumbers(s, a) {
+    var want = {};
+    (a.missed || []).concat(a.blank || [], Object.keys(a.partial || {})).forEach(function (n) { want[String(n)] = true; });
+    var ids = s.items.filter(function (id) { return want[String(itemsById[id].n)]; });
+    if (!ids.length) return toast('Could not match those question numbers');
+    startRun('retry:' + s.id, 'Retry: ' + s.title, ids, 'page');
+  }
+
+  /* ---------- running a set ---------- */
+  var timerHandle = null, curSeed = '';
+  function startRun(key, title, ids, mode, force) {
+    var old = S.drafts[key];
+    if (old && !force && Object.keys(old.answers).length) {
+      var card = h('div', { class: 'card', style: 'border-color:var(--warn)' },
+        h('b', null, 'You have ' + Object.keys(old.answers).length + ' answers saved in this set'),
+        h('div', { class: 'stack', style: 'margin-top:10px' },
+          h('button', { onclick: function () { go('#run/' + encodeURIComponent(key)); } }, 'Carry on with them'),
+          h('button', { class: 'ghost', onclick: function () { startRun(key, title, ids, mode, true); } }, 'Throw them away and start again')));
+      $main.insertBefore(card, $main.firstChild); window.scrollTo(0, 0);
+      return;
+    }
+    S.drafts[key] = { key: key, title: title, ids: ids, mode: mode, answers: {}, seed: String(Date.now() % 100000), started: new Date().toISOString(), elapsed: 0, idx: 0, delivered: [] };
+    save();
+    go('#run/' + encodeURIComponent(key));
+  }
+  function stopTimer() { if (timerHandle) { clearInterval(timerHandle); timerHandle = null; } }
+
+  function viewRun(key) {
+    var d = S.drafts[key];
+    if (!d) return go('#sets');
+    stopTimer();
+    curSeed = d.seed || '';
+    var $time = h('span', { class: 't' }, fmtTime(d.elapsed));
+    var $count = h('span', { class: 'small soft' });
+    var tick = 0;
+    timerHandle = setInterval(function () {
+      if (document.hidden) return;
+      d.elapsed += 1;
+      if (d.mode === 'adaptive') {
+        var left = 90 * 60 - d.elapsed;
+        $time.textContent = fmtTime(Math.max(0, left)) + ' left';
+        if (left <= 0) { toast('Time is up'); return finishRun(key); }
+      } else $time.textContent = fmtTime(d.elapsed);
+      if (++tick % 10 === 0) save();
+    }, 1000);
+    var onAnswer = function () { save(); refreshCount(); };
+    function answeredCount() { return d.ids.filter(function (id) { return C.isAnswered(itemsById[id], d.answers[id]); }).length; }
+    function refreshCount() {
+      $count.textContent = d.mode === 'page' ? answeredCount() + ' of ' + d.ids.length + ' answered'
+        : d.mode === 'adaptive' ? 'Question ' + (d.delivered.length + 1) : 'Question ' + (d.idx + 1) + ' of ' + d.ids.length;
+    }
+
+    var bar = h('div', { class: 'bar' },
+      h('button', { class: 'plain', onclick: function () { save(); stopTimer(); go('#home'); toast('Saved. Carry on any time.'); } }, 'Pause'),
+      $count, $time);
+
+    if (d.mode === 'page') {
+      var body = [], lastCase = null;
+      d.ids.forEach(function (id, i) {
+        var it = itemsById[id];
+        body.push(renderItem(it, i + 1, d.answers, onAnswer, it.caseId && it.caseId === lastCase));
+        lastCase = it.caseId || null;
+      });
+      body.push(h('button', { onclick: function () { finishRun(key); } }, 'Finish and see my score'));
+      show(bar, h('div', { style: 'padding-top:6px' }, body));
+    } else {
+      var $slot = h('div');
+      var showOne = function () {
+        var id;
+        if (d.mode === 'adaptive') {
+          if (!d.current) {
+            var pool = C.adaptiveInit(d.ids.map(function (x) { return itemsById[x]; }));
+            var nx = C.adaptiveNext(pool, d.delivered);
+            if (nx.done) return finishRun(key);
+            d.current = nx.id; save();
+          }
+          id = d.current;
+        } else {
+          if (d.idx >= d.ids.length) return finishRun(key);
+          id = d.ids[d.idx];
+        }
+        var it = itemsById[id];
+        var n = d.mode === 'adaptive' ? d.delivered.length + 1 : d.idx + 1;
+        var shownAt = d.elapsed;
+        var $next = h('button', { disabled: !C.isAnswered(it, d.answers[id]), onclick: function () {
+          d.times = d.times || {}; d.times[id] = d.elapsed - shownAt;
+          if (d.mode === 'adaptive') {
+            d.delivered.push({ id: id, level: it.level, caseId: it.caseId || null, pts: C.score(it, d.answers[id]) });
+            d.current = null;
+          } else d.idx += 1;
+          save(); showOne(); window.scrollTo(0, 0);
+        } }, 'Next');
+        $slot.innerHTML = '';
+        add($slot, [renderItem(it, n, d.answers, function () { save(); $next.disabled = !C.isAnswered(it, d.answers[id]); }, false), $next,
+          h('p', { class: 'small soft center' }, 'No going back in this mode, like the real exam.')]);
+        refreshCount();
+      };
+      show(bar, $slot);
+      showOne();
+    }
+    refreshCount();
+  }
+
+  function shuffled(list, seedText) {
+    var seed = 7; String(seedText).split('').forEach(function (c) { seed = (seed * 31 + c.charCodeAt(0)) >>> 0; });
+    var a = list.slice();
+    for (var i = a.length - 1; i > 0; i--) { seed = (seed * 1664525 + 1013904223) >>> 0; var j = seed % (i + 1); var t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+  function renderItem(it, n, answers, onChange, caseSeen) {
+    var box = h('div', { class: 'card q', id: 'q-' + it.id });
+    if (it.caseId && BANK.cases[it.caseId]) {
+      add(box, caseSeen
+        ? h('details', { class: 'case' }, h('summary', null, 'Case (tap to read again)'), BANK.cases[it.caseId])
+        : h('div', { class: 'case' }, BANK.cases[it.caseId]));
+    }
+    add(box, h('div', null, h('span', { class: 'num' }, n + '. '), it.label ? h('span', { class: 'small soft' }, it.label) : null));
+    if (it.type !== 'cloze') add(box, h('div', { class: 'stem' }, it.stem));
+    var set = function (v) { answers[it.id] = v; onChange(); };
+
+    if (it.type === 'single' || it.type === 'multi') {
+      var multi = it.type === 'multi';
+      var $hint = multi ? h('div', { class: 'small soft' }) : null;
+      var labels = [];
+      var hint = function () {
+        if (!multi) return;
+        var k = (answers[it.id] || []).length;
+        $hint.textContent = it.select ? 'Pick ' + it.select + ' · ' + k + ' picked' : 'Select all that apply · ' + k + ' picked';
+      };
+      shuffled(it.opts, it.id + curSeed).forEach(function (o) {
+        var cur = answers[it.id];
+        var on = multi ? (cur || []).indexOf(o.k) >= 0 : cur === o.k;
+        var inp = h('input', { type: multi ? 'checkbox' : 'radio', name: 'q' + it.id, checked: on, onchange: function () {
+          if (multi) {
+            var a = (answers[it.id] || []).filter(function (k) { return k !== o.k; });
+            if (inp.checked) a.push(o.k);
+            set(a);
+          } else set(o.k);
+          labels.forEach(function (l) { l.el.className = 'opt' + (l.inp.checked ? ' on' : ''); });
+          hint();
+        } });
+        var lab = h('label', { class: 'opt' + (on ? ' on' : '') }, inp, h('span', null, o.t));
+        labels.push({ el: lab, inp: inp });
+        add(box, lab);
+      });
+      if (multi) { hint(); add(box, $hint); }
+    } else if (it.type === 'matrix') {
+      var cur = answers[it.id] || {};
+      var tbl = h('table', { class: 'matrix' }, h('tr', null, h('th', null, ''), it.cols.map(function (c) { return h('th', { class: 'c' }, c.t); })));
+      it.rows.forEach(function (r) {
+        add(tbl, h('tr', null, h('td', null, r.t), it.cols.map(function (c) {
+          return h('td', { class: 'c' }, h('input', { type: 'radio', name: 'q' + it.id + r.k, 'aria-label': r.t + ': ' + c.t, checked: cur[r.k] === c.k, onchange: function () {
+            var a = Object.assign({}, answers[it.id] || {}); a[r.k] = c.k; set(a);
+          } }));
+        })));
+      });
+      add(box, tbl);
+    } else if (it.type === 'cloze') {
+      if (it.stem && it.stem !== it.text) add(box, h('div', { class: 'stem' }, it.stem));
+      var p = h('p', { class: 'cloze' });
+      var parts = it.text.split(/\[blank (\d+)\]/i);
+      parts.forEach(function (part, i) {
+        if (i % 2 === 0) { add(p, part); return; }
+        var bi = parseInt(part, 10) - 1, b = it.blanks[bi];
+        if (!b) { add(p, '[blank ' + part + ']'); return; }
+        var sel = h('select', { 'aria-label': 'Blank ' + part, onchange: function () {
+          var a = (answers[it.id] || []).slice(); a[bi] = sel.value || null; set(a);
+        } }, h('option', { value: '' }, 'choose…'), b.opts.map(function (o) { return h('option', { value: o.k }, o.t); }));
+        sel.value = (answers[it.id] || [])[bi] || '';
+        add(p, sel);
+      });
+      add(box, p);
+    } else if (it.type === 'bowtie') {
+      it.groups.forEach(function (g, gi) {
+        var $h = h('div', { class: 'small soft' });
+        var hintG = function () { $h.textContent = 'Pick ' + g.pick + ' · ' + (((answers[it.id] || [])[gi]) || []).length + ' picked'; };
+        var wrap = h('div', { class: 'grp' }, h('h4', null, g.name), $h);
+        g.opts.forEach(function (o) {
+          var picked = ((answers[it.id] || [])[gi] || []).indexOf(o.k) >= 0;
+          var inp = h('input', { type: g.pick === 1 ? 'radio' : 'checkbox', name: 'q' + it.id + 'g' + gi, checked: picked, onchange: function () {
+            var a = (answers[it.id] || it.groups.map(function () { return []; })).map(function (x) { return (x || []).slice(); });
+            if (g.pick === 1) a[gi] = [o.k];
+            else {
+              a[gi] = a[gi].filter(function (k) { return k !== o.k; });
+              if (inp.checked) {
+                if (a[gi].length >= g.pick) { inp.checked = false; toast('Pick only ' + g.pick + ' here'); return; }
+                a[gi].push(o.k);
+              }
+            }
+            set(a); hintG();
+            Array.prototype.forEach.call(wrap.querySelectorAll('label'), function (l) { l.className = 'opt' + (l.querySelector('input').checked ? ' on' : ''); });
+          } });
+          add(wrap, h('label', { class: 'opt' + (picked ? ' on' : '') }, inp, h('span', null, o.t)));
+        });
+        hintG();
+        add(box, wrap);
+      });
+    } else if (it.type === 'numeric') {
+      var inp = h('input', { type: 'text', class: 'num', inputmode: 'decimal', autocomplete: 'off', 'aria-label': 'Your answer', value: answers[it.id] || '',
+        oninput: function () { set(inp.value); } });
+      add(box, h('p', null, inp, ' ', h('b', null, it.unit || '')));
+      if (it.round) add(box, h('div', { class: 'small soft' }, 'Round: ' + it.round));
+    }
+    return box;
+  }
+
+  function finishRun(key) {
+    var d = S.drafts[key];
+    if (!d) return;
+    var ids = (d.mode === 'adaptive' ? d.delivered.map(function (x) { return x.id; }) : d.ids).filter(function (id) { return itemsById[id]; });
+    if (d.mode === 'page') {
+      var open = ids.filter(function (id) { return !C.isAnswered(itemsById[id], d.answers[id]); });
+      if (open.length && !d.confirmed) {
+        var nums = open.map(function (id) { return ids.indexOf(id) + 1; });
+        var $w = h('div', { class: 'card', style: 'border-color:var(--warn)' },
+          h('b', null, open.length + ' not answered: ' + nums.slice(0, 12).join(', ') + (nums.length > 12 ? '…' : '')),
+          h('p', { class: 'small soft' }, 'An unfinished question loses marks. On the real exam you cannot skip, so make your best choice.'),
+          h('div', { class: 'stack' },
+            h('button', { onclick: function () { $w.remove(); document.getElementById('q-' + open[0]).scrollIntoView(); } }, 'Go to question ' + nums[0]),
+            h('button', { class: 'ghost', onclick: function () { d.confirmed = true; finishRun(key); } }, 'Finish anyway')));
+        $main.appendChild($w); $w.scrollIntoView();
+        return;
+      }
+    }
+    stopTimer();
+    var items = ids.map(function (id) { return itemsById[id]; });
+    var m = C.markAttempt(items, d.answers);
+    var setId = /^(retry|lesson|mix):/.test(key) ? 'retry' : key;
+    key = key.replace(/^(retry:)+/, 'retry:');
+    var attempt = { set: setId, of: key, title: d.title, mode: d.mode, started: d.started, finished: new Date().toISOString(), secs: d.elapsed,
+      order: (d.mode === 'adaptive' || setId === 'retry' || d.short) ? ids : null, answers: d.answers, times: d.times || null, short: !!d.short, per: m.per, score: m.score, max: m.max, pct: m.pct, sent: false };
+    if (d.mode === 'adaptive') attempt.adaptive = C.adaptiveReport(d.delivered);
+    S.attempts.push(attempt);
+    Object.keys(m.per).forEach(function (id) { if (m.per[id] < 1) S.cards['M:' + id] = { box: 0, due: today() }; });
+    delete S.drafts[key];
+    autoDays();
+    save();
+    go('#result/' + (S.attempts.length - 1));
+  }
+
+  /* ---------- results ---------- */
+  function resultMessage(a) {
+    a.days = Object.keys(S.days).filter(function (t) { return S.days[t]; });
+    return 'My result: ' + a.title + ' ' + fmtPct(a.pct) + ' (' + fmtPts(a.score) + ' of ' + a.max + ') in ' + Math.round(a.secs / 60) + ' min.\n' + C.encodeResult(a, itemsById);
+  }
+  /* Hand a message to her chat app. Share sheet first, then the clipboard, then a box she can
+     copy from: one of them always works, whatever the browser allows. */
+  function sendText(text, done) {
+    var ok = function () { if (done) done(); };
+    var box = function () {
+      var ta = h('textarea', { readonly: 'readonly', 'aria-label': 'Message to send' }, text);
+      var card = h('div', { class: 'card', style: 'border-color:var(--accent)' },
+        h('b', null, 'Copy this and send it to Nova'), ta,
+        h('button', { class: 'ghost', onclick: function () { ok(); card.remove(); toast('Marked as sent'); } }, 'I have sent it'));
+      $main.insertBefore(card, $main.firstChild);
+      ta.focus(); ta.select(); window.scrollTo(0, 0);
+    };
+    var copy = function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { toast('Copied. Paste it in your chat with Nova.'); ok(); }, box);
+      } else box();
+    };
+    if (navigator.share) {
+      navigator.share({ text: text }).then(ok, function (e) { if (!e || e.name !== 'AbortError') copy(); });
+    } else copy();
+  }
+  function viewResult(idx) {
+    var a = S.attempts[idx];
+    if (!a) return go('#progress');
+    var ids = attemptIds(a);
+    var items = ids.map(function (id) { return itemsById[id]; });
+    var m = C.markAttempt(items, a.answers);
+    var out = [
+      h('h1', null, a.title),
+      h('div', { class: 'card center' },
+        h('div', { class: 'big' }, fmtPct(a.pct)),
+        h('div', { class: 'soft' }, fmtPts(a.score) + ' of ' + a.max + ' points · ' + fmtTime(a.secs) + ' · ' + fmtDate(a.finished)),
+        a.adaptive ? h('p', null, 'Level reached: ', h('b', null, a.adaptive.ability === null ? 'n/a' : a.adaptive.ability + ' of 5'), ' · ' + a.adaptive.reading) : null,
+        h('p', { class: 'small soft' }, 'A practice score shows what to work on. It does not predict a pass or a fail.'))
+    ];
+    var feels = [['easy', 'Too easy'], ['right', 'About right'], ['hard', 'Too hard']];
+    var $feel = h('div', { class: 'card' }, h('b', null, 'How did this set feel?'),
+      h('div', { class: 'row', style: 'margin-top:8px' }, feels.map(function (f) {
+        return h('button', { class: 'sm ' + (a.feel === f[0] ? '' : 'ghost'), style: 'flex:1', onclick: function () { a.feel = f[0]; a.sent = false; save(); route(); } }, f[1]);
+      })),
+      h('p', { class: 'small soft' }, 'Your next sets are adjusted to this and to your score.'));
+    out.push($feel);
+    out.push(h('button', { class: a.sent ? 'ghost' : '', onclick: function () { sendText(resultMessage(a), function () { a.sent = true; save(); }); } },
+      a.sent ? 'Send to Nova again' : 'Send this result to Nova'));
+    var wrongIds = ids.filter(function (id) { return a.per[id] < 1; });
+    if (wrongIds.length) {
+      out.push(h('button', { class: 'ghost', style: 'margin-top:10px', onclick: function () { startRun('retry:' + String(a.of || a.set).replace(/^(retry:)+/, ''), 'Retry: ' + a.title.replace(/^Retry: /, ''), wrongIds, 'page'); } },
+        'Retry the ' + wrongIds.length + ' I missed'));
+      out.push(h('p', { class: 'small soft' }, wrongIds.length + (wrongIds.length === 1 ? ' miss was' : ' misses were') + ' added to My rules.'));
+    }
+    var bars = function (title, bag) {
+      var keys = Object.keys(bag).sort(function (x, y) { return bag[x].score / bag[x].max - bag[y].score / bag[y].max; });
+      if (keys.length < 2) return null;
+      return h('div', { class: 'card' }, h('h3', { style: 'margin-top:0' }, title), keys.map(function (k) {
+        var p = 100 * bag[k].score / bag[k].max;
+        return h('div', { style: 'margin:10px 0' }, h('div', { class: 'row small' }, h('span', null, k), h('b', null, fmtPct(p) + ' (' + fmtPts(bag[k].score) + '/' + bag[k].max + ')')),
+          h('div', { class: 'meter' }, h('i', { style: 'width:' + p + '%' })));
+      }));
+    };
+    out.push(bars('By type of question', m.byType), bars('By exam category', m.byCat));
+    if (a.adaptive) out.push(h('div', { class: 'card' }, h('h3', { style: 'margin-top:0' }, 'Your path'),
+      h('p', { class: 'small soft' }, 'Difficulty of each question, 1 easy to 5 hard:'), h('p', null, a.adaptive.path.join(' '))));
+
+    out.push(h('h2', null, 'Review'));
+    var order = ids.slice().sort(function (x, y) { return a.per[x] - a.per[y]; });
+    order.forEach(function (id) {
+      var it = itemsById[id]; if (!it) return;
+      var pts = a.per[id], n = ids.indexOf(id) + 1;
+      var mark = pts >= 1 ? h('span', { class: 'right' }, 'Right') : pts > 0 ? h('span', { class: 'part' }, 'Partly right · ' + fmtPts(pts)) : h('span', { class: 'wrong' }, C.encodeResp(it, a.answers[id]).replace(/[-,;]/g, '') ? 'Wrong' : 'Not answered');
+      var det = h('details', { class: 'card', open: false },
+        h('summary', null, h('b', null, n + '. '), mark, h('span', { class: 'small soft' }, '  ' + it.stem.replace(/\s+/g, ' ').slice(0, 70) + '…')));
+      if (it.caseId && BANK.cases[it.caseId]) add(det, h('details', { class: 'case' }, h('summary', null, 'Case'), BANK.cases[it.caseId]));
+      add(det, h('div', { class: 'stem', style: 'margin-top:10px' }, it.type === 'cloze' ? it.text : it.stem));
+      if (it.opts) add(det, h('div', { class: 'small', style: 'margin:8px 0;white-space:pre-wrap' }, it.opts.map(function (o) { return o.k + '. ' + o.t; }).join('\n')));
+      var mine = C.encodeResp(it, a.answers[id]);
+      add(det, h('div', { class: 'kv' }, h('span', { class: 'soft' }, 'Your answer'), h('b', null, mine || 'blank')));
+      add(det, h('div', { style: 'white-space:pre-wrap;margin:8px 0' }, h('span', { class: 'soft' }, 'Correct: '), h('b', null, C.answerText(it))));
+      var trap = C.trapFor(it, a.answers[id]);
+      if (trap) add(det, h('div', { class: 'card', style: 'border-color:var(--warn)' }, h('b', null, 'The trap: '), trap));
+      add(det, h('div', { class: 'why' }, it.why));
+      out.push(det);
+    });
+    show(out);
+  }
+
+  /* ---------- my rules ---------- */
+  function viewRules() {
+    var cards = allCards(), due = dueCards();
+    var out = [h('h1', null, 'My rules'),
+      h('p', { class: 'soft small' }, cards.length + ' cards: your rules, the dose formulas, and every question you have missed. Missed questions are added by themselves.')];
+    var sitting = due.slice(0, 15);
+    out.push(h('button', { disabled: !due.length, onclick: function () { reviewCards(sitting); } },
+      !due.length ? 'Nothing due today' : due.length > 15 ? 'Review 15 now (' + due.length + ' due)' : 'Review ' + due.length + ' due today'));
+    out.push(h('button', { class: 'ghost', style: 'margin-top:10px', onclick: function () { reviewCards(cards.filter(function (c) { return c.src === 'Formula'; })); } }, 'Dose formulas only'));
+    out.push(h('div', { class: 'card' }, h('h3', { style: 'margin-top:0' }, 'Conversions and rounding'), EXTRA.conversions.map(function (c) { return h('p', { class: 'small' }, c); })));
+    out.push(h('h2', null, 'All cards'));
+    cards.forEach(function (c) {
+      out.push(h('details', { class: 'card' }, h('summary', null, h('b', null, c.front.replace(/\s+/g, ' ').slice(0, 90) + (c.front.length > 90 ? '…' : '')), ' ', h('span', { class: 'pill' }, c.src)),
+        c.front.length > 90 ? h('p', { class: 'stem' }, c.front) : null, h('div', { class: 'why' }, c.back)));
+    });
+    show(out);
+  }
+  function reviewCards(list) {
+    var i = 0, left = list.slice();
+    var step = function () {
+      if (i >= left.length) { toast('Done for now'); return viewRules(); }
+      var c = left[i], flipped = false;
+      var $back = h('div', { class: 'back', style: 'display:none' }, c.back);
+      var $btns = h('div', { class: 'stack', style: 'display:none' },
+        h('button', { onclick: function () { var st = cardState(c.id); var b = Math.min(4, st.box + 1); S.cards[c.id] = { box: b, due: addDays(BOX_DAYS[b]) }; save(); i++; step(); } }, 'I knew it'),
+        h('button', { class: 'ghost', onclick: function () { S.cards[c.id] = { box: 0, due: today() }; save(); left.push(c); i++; step(); } }, 'Not yet, show it again'));
+      var card = h('div', { class: 'card flash', onclick: function () { if (flipped) return; flipped = true; $back.style.display = ''; $btns.style.display = ''; $tap.style.display = 'none'; } },
+        h('div', { class: 'soft small' }, c.src + ' · ' + (i + 1) + ' of ' + left.length),
+        h('div', { class: 'front stem' }, c.front), $back);
+      var $tap = h('p', { class: 'center soft small' }, 'Say the answer to yourself, then tap the card.');
+      show(h('button', { class: 'plain', onclick: viewRules }, '‹ My rules'), card, $tap, $btns);
+    };
+    step();
+  }
+
+  /* ---------- progress ---------- */
+  function viewProgress() {
+    var rows = allResults();
+    var out = [h('h1', null, 'Progress')];
+    if (!rows.length) { out.push(h('p', null, 'Finish a set and your scores appear here.')); return show(out); }
+    var tests = rows.filter(function (r) { return !r.practice; });
+    if (tests.length) out.push(chart(tests));
+    out.push(h('p', { class: 'small soft' }, 'Scores are on our own original questions. They show the trend and what to work on; they are not a pass prediction.'));
+
+    var cat = {}, type = {};
+    S.attempts.forEach(function (a) {
+      Object.keys(a.per).forEach(function (id) {
+        var it = itemsById[id]; if (!it) return;
+        var bump = function (bag, k) { bag[k] = bag[k] || { s: 0, n: 0 }; bag[k].s += a.per[id]; bag[k].n += 1; };
+        bump(cat, it.cat);
+        if (it.type === 'multi') bump(type, 'Select-all');
+        if (it.calc) bump(type, 'Calculations');
+        if (['matrix', 'cloze', 'bowtie'].indexOf(it.type) >= 0) bump(type, 'Next-Gen items');
+      });
+    });
+    var base = {}; (HIST.categories || []).forEach(function (c) { base[c.cat] = c.pct; });
+    var cats = Object.keys(Object.assign({}, base, cat)).filter(Boolean);
+    out.push(h('h2', null, 'By exam category'));
+    out.push(h('table', { class: 'plain' }, h('tr', null, h('th', null, ''), h('th', { class: 'n' }, 'Baseline'), h('th', { class: 'n' }, 'In the app')),
+      cats.map(function (k) {
+        return h('tr', null, h('td', null, k), h('td', { class: 'n' }, base[k] !== undefined ? fmtPct(base[k]) : '–'),
+          h('td', { class: 'n' }, cat[k] ? fmtPct(100 * cat[k].s / cat[k].n) + ' (' + cat[k].n + ')' : '–'));
+      })));
+    if (Object.keys(type).length) {
+      out.push(h('h2', null, 'Your watch list'));
+      out.push(h('div', { class: 'card' }, Object.keys(type).map(function (k) {
+        return h('div', { class: 'kv' }, h('span', null, k), h('b', null, fmtPct(100 * type[k].s / type[k].n) + ' of ' + type[k].n));
+      })));
+    }
+    out.push(h('h2', null, 'Every test'));
+    out.push(h('table', { class: 'plain' }, rows.slice().reverse().map(function (r) {
+      return h('tr', r.idx !== undefined ? { style: 'cursor:pointer', onclick: function () { go('#result/' + r.idx); } } : null,
+        h('td', null, fmtDate(r.date)), h('td', null, r.title, r.old ? h('div', { class: 'small soft' }, 'before the app') : r.practice ? h('div', { class: 'small soft' }, 'practice, not in the chart') : null),
+        h('td', { class: 'n' }, h('b', null, fmtPct(r.pct)), h('div', { class: 'small soft' }, fmtPts(r.score) + '/' + r.max)));
+    })));
+    show(out);
+  }
+  function chart(rows) {
+    var W = 320, H = 160, L = 30, R = 12, T = 22, B = 22, n = rows.length;
+    var x = function (i) { return L + (n === 1 ? (W - L - R) / 2 : i * (W - L - R) / (n - 1)); };
+    var y = function (p) { return T + (100 - p) * (H - T - B) / 100; };
+    var ns = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('class', 'chart'); svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Score for each test, oldest to newest: ' + rows.map(function (r) { return fmtPct(r.pct); }).join(', '));
+    var el = function (tag, at, text) { var e = document.createElementNS(ns, tag); Object.keys(at).forEach(function (k) { e.setAttribute(k, at[k]); }); if (text) e.textContent = text; svg.appendChild(e); return e; };
+    [0, 50, 100].forEach(function (p) {
+      el('line', { x1: L, x2: W - R, y1: y(p), y2: y(p), stroke: 'var(--line)', 'stroke-width': 1 });
+      el('text', { x: L - 5, y: y(p) + 4, 'text-anchor': 'end', 'font-size': 10, fill: 'var(--soft)' }, p + '%');
+    });
+    if (n > 1) el('polyline', { points: rows.map(function (r, i) { return x(i) + ',' + y(r.pct); }).join(' '), fill: 'none', stroke: 'var(--accent)', 'stroke-width': 2 });
+    rows.forEach(function (r, i) {
+      el('circle', { cx: x(i), cy: y(r.pct), r: 4, fill: 'var(--accent)' });
+      el('text', { x: x(i), y: y(r.pct) - 8, 'text-anchor': 'middle', 'font-size': 10, fill: 'var(--ink)' }, Math.round(r.pct));
+    });
+    el('text', { x: L, y: H - 5, 'font-size': 10, fill: 'var(--soft)' }, fmtDate(rows[0].date));
+    el('text', { x: W - R, y: H - 5, 'text-anchor': 'end', 'font-size': 10, fill: 'var(--soft)' }, fmtDate(rows[n - 1].date));
+    return h('div', { class: 'card' }, svg);
+  }
+
+  /* ---------- plan and coverage ---------- */
+  function viewPlan() {
+    var done = EXTRA.queue.filter(function (q) { return S.days[q.t]; }).length;
+    var out = [h('h1', null, 'Plan and coverage'),
+      h('p', { class: 'soft small' }, 'One queue of 28 topics, not a calendar. Miss a day and you carry on from where you were; the plan never restarts.'),
+      h('div', { class: 'card' }, h('div', { class: 'row' }, h('b', null, done + ' of 28 topics done'), h('span', { class: 'soft small' }, Math.round(100 * done / 28) + '%')),
+        h('div', { class: 'meter', style: 'margin-top:8px' }, h('i', { style: 'width:' + (100 * done / 28) + '%' })))];
+    EXTRA.queue.forEach(function (q) {
+      var sets = setsForDay(q.t);
+      var cb = h('input', { type: 'checkbox', checked: !!S.days[q.t], 'aria-label': q.t + ' done', style: 'width:24px;height:24px;accent-color:var(--accent)', onchange: function () { S.days[q.t] = cb.checked; save(); } });
+      out.push(h('div', { class: 'card' }, h('div', { class: 'row' },
+        h('div', { class: 'grow' }, h('b', null, q.t + ' · ' + q.title), h('div', { class: 'small soft' }, 'Saunders ' + q.saunders + (sets.length ? ' · ' + sets.length + (sets.length === 1 ? ' set' : ' sets') : ''))), cb),
+        sets.length ? h('div', { class: 'chips', style: 'margin-top:8px' }, sets.map(function (s) {
+          return h('a', { class: 'chip' + (untouched(s) ? '' : ' done'), href: '#set/' + s.id, style: 'text-decoration:none' }, s.title);
+        })) : null));
+    });
+    out.push(h('h2', null, 'Nothing left out'));
+    out.push(h('p', { class: 'small soft' }, 'Every area of the official test plan, and the topic day that covers it. Green means that day is ticked.'));
+    EXTRA.plan.forEach(function (g) {
+      var isDone = function (ar) { return ar.t.every(function (t) { return S.days[t]; }); };
+      var n = g.areas.filter(isDone).length;
+      out.push(h('details', { class: 'card' }, h('summary', null, h('b', null, g.group), h('span', { class: 'soft small' }, '  ' + n + ' of ' + g.areas.length)),
+        h('div', { class: 'chips', style: 'margin-top:10px' }, g.areas.map(function (ar) { return h('span', { class: 'chip' + (isDone(ar) ? ' done' : '') }, ar.name + ' · ' + ar.t.join('/')); }))));
+    });
+    show(out);
+  }
+
+  /* ---------- more: exam date, sending, backup ---------- */
+  function viewMore() {
+    var out = [h('h1', null, 'More')];
+    var date = h('input', { type: 'date', value: S.exam || '', 'aria-label': 'Exam date', onchange: function () { S.exam = date.value || null; save(); toast('Saved'); } });
+    out.push(h('div', { class: 'card' }, h('h3', { style: 'margin-top:0' }, 'Exam date'), date));
+
+    var unsent = S.attempts.filter(function (a) { return !a.sent; });
+    out.push(h('div', { class: 'card stack' }, h('h3', { style: 'margin-top:0' }, 'Send results to Nova'),
+      h('p', { class: 'small soft' }, 'Nova keeps the second copy of your record and uses it to choose your next set.'),
+      unsent.length
+        ? h('button', { onclick: function () { sendText(unsent.map(resultMessage).join('\n\n'), function () { unsent.forEach(function (a) { a.sent = true; }); save(); route(); }); } }, 'Send ' + unsent.length + (unsent.length === 1 ? ' result' : ' results'))
+        : h('p', null, 'Everything is sent.')));
+
+    var ta = h('textarea', { 'aria-label': 'Backup code', placeholder: 'Paste a backup code here to restore' });
+    out.push(h('div', { class: 'card stack' }, h('h3', { style: 'margin-top:0' }, 'Backup'),
+      h('p', { class: 'small soft' }, 'Your answers live on this phone. If you change phone or clear Safari, a backup code puts everything back. Nova can also send you one.'),
+      h('button', { class: 'ghost', onclick: function () { sendText('My study backup:\n' + backupCode()); } }, 'Make a backup code'),
+      ta,
+      h('button', { class: 'ghost', onclick: function () { try { restore(ta.value); toast('Restored'); go('#home'); } catch (e) { toast('That code did not work'); } } }, 'Restore from code')));
+    out.push(h('p', { class: 'small soft center' }, 'Questions updated ' + fmtDate(D.built) + ' · ' + BANK.items.length + ' questions in ' + BANK.sets.length + ' sets'));
+    out.push(h('p', { class: 'small soft center' }, 'Original practice questions for study only. Not real exam items; follow your facility protocol in practice.'));
+    show(out);
+  }
+  function backupCode() { return 'RB1.' + C.b64uEncode(JSON.stringify(S)); }
+  /* Restore never throws away what is on this phone: results are merged by their finish time. */
+  function restore(code) {
+    var m = String(code).match(/RB1\.([A-Za-z0-9_-]+)/);
+    if (!m) throw new Error('no code');
+    var obj = JSON.parse(C.b64uDecode(m[1]));
+    if (!obj || !Array.isArray(obj.attempts)) throw new Error('bad code');
+    var have = {}; S.attempts.forEach(function (a) { have[a.set + '|' + a.finished] = 1; });
+    obj.attempts.forEach(function (a) { if (!have[a.set + '|' + a.finished]) S.attempts.push(a); });
+    S.attempts.sort(function (x, y) { return x.finished < y.finished ? -1 : 1; });
+    Object.keys(obj.days || {}).forEach(function (t) { if (obj.days[t]) S.days[t] = true; });
+    Object.keys(obj.cards || {}).forEach(function (k) { if (!S.cards[k]) S.cards[k] = obj.cards[k]; });
+    Object.keys(obj.drafts || {}).forEach(function (k) { if (!S.drafts[k]) S.drafts[k] = obj.drafts[k]; });
+    if (obj.hist) { S.hist = obj.hist; HIST = obj.hist; }
+    if (!S.exam && obj.exam) S.exam = obj.exam;
+    S.attempts.forEach(remark);
+    save();
+  }
+
+  /* ---------- routing ---------- */
+  var TABS = [['home', '⌂', 'Today'], ['sets', '☰', 'Sets'], ['rules', '✎', 'My rules'], ['progress', '↗', 'Progress'], ['plan', '✓', 'Plan']];
+  function route() {
+    stopTimer();
+    var hash = location.hash.replace(/^#/, '') || 'home';
+    var parts = hash.split('/'), page = parts[0], arg = parts[1] ? decodeURIComponent(parts.slice(1).join('/')) : null;
+    if (page === 'restore' && arg) {
+      try { restore(arg); toast('Your record is restored'); } catch (e) { toast('That restore link did not work'); }
+      history.replaceState(null, '', location.pathname); page = 'home';
+    }
+    var nav = document.querySelector('nav.tabs');
+    nav.style.display = page === 'run' ? 'none' : '';
+    Array.prototype.forEach.call(nav.querySelectorAll('a'), function (a) {
+      var on = a.getAttribute('href') === '#' + (page === 'set' || page === 'lesson' ? 'sets' : page === 'result' ? 'progress' : page === 'more' ? 'home' : page);
+      a.className = on ? 'on' : '';
+      if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    try {
+    ({ home: viewHome, sets: viewSets, set: function () { viewSet(arg); }, run: function () { viewRun(arg); },
+       result: function () { viewResult(parseInt(arg, 10)); }, lesson: function () { viewLesson(arg); }, rules: viewRules, progress: viewProgress, plan: viewPlan, more: viewMore }[page] || viewHome)();
+    } catch (e) {
+      nav.style.display = '';
+      show(h('div', { class: 'card', style: 'border-color:var(--bad)' }, h('b', null, 'This screen hit a problem'),
+        h('p', { class: 'small' }, 'Your saved results are safe. Go back to Today; if it happens again, tell Nova: "' + String(e.message).slice(0, 80) + '".'),
+        h('div', { class: 'stack' }, h('button', { onclick: function () { location.hash = '#home'; if (page === 'home') location.reload(); } }, 'Back to Today'),
+          page === 'run' && arg ? h('button', { class: 'ghost', onclick: function () { delete S.drafts[arg]; save(); go('#home'); } }, 'Drop this unfinished set') : null)));
+    }
+  }
+
+  function boot() {
+    load();
+    $main = document.querySelector('main');
+    var nav = document.querySelector('nav.tabs');
+    TABS.forEach(function (t) { nav.appendChild(h('a', { href: '#' + t[0] }, h('b', { 'aria-hidden': 'true' }, t[1]), t[2])); });
+    window.addEventListener('hashchange', route);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
+    route();
+    if ('serviceWorker' in navigator && location.protocol === 'https:') {
+      navigator.serviceWorker.register('sw.js').then(function (reg) {
+        // an app left open for days still picks up new sets when she comes back to it
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) reg.update().catch(function () {}); });
+      }).catch(function () {});
+      navigator.serviceWorker.addEventListener('controllerchange', function () { if (!/^#run/.test(location.hash)) location.reload(); });
+    }
+  }
+  window.__app = { state: function () { return S; }, core: C };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})();
+</script>
+</body>
+</html>
