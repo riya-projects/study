@@ -121,6 +121,10 @@ a{color:var(--accent)}
 .onb h1{font-size:28px}
 
 .sheet .row span{display:flex;gap:4px}
+
+.tooltab.on{background:var(--tint);border-radius:10px}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.keys button{min-height:44px;padding:8px;font-size:18px}
 </style>
 </head>
 <body>
@@ -301,6 +305,8 @@ a{color:var(--accent)}
     if (attempt.days) body.g = attempt.days;            // topic days she has done
     if (attempt.why && Object.keys(attempt.why).length) body.w = attempt.why;   // why she thinks she missed each: k didn't know, m misread, s slip, g guessed
     if (attempt.note) body.n = String(attempt.note).slice(0, 600);                // the rule in her own words
+    if (attempt.changes && Object.keys(attempt.changes).length) body.c = attempt.changes;   // how many times she changed each answer
+    if (attempt.unsure && attempt.unsure.length) body.u = attempt.unsure;                    // questions she marked "not sure"
     if (attempt.feel) body.f = attempt.feel;            // how the set felt: easy | right | hard
     if (attempt.short) body.k = 1;                      // she chose the short version
     if (attempt.times) body.x = attempt.times;          // seconds per question, one-at-a-time modes only
@@ -315,7 +321,7 @@ a{color:var(--accent)}
     Object.keys(body.a).forEach(function (id) {
       if (itemsById[id]) answers[id] = decodeResp(itemsById[id], body.a[id]);
     });
-    return { set: body.s, mode: body.m, finished: body.t, secs: body.d, order: body.o, answers: answers, pct: body.p, of: body.r || null, days: body.g || null, why: body.w || null, note: body.n || null, feel: body.f || null, short: !!body.k, times: body.x || null };
+    return { set: body.s, mode: body.m, finished: body.t, secs: body.d, order: body.o, answers: answers, pct: body.p, of: body.r || null, days: body.g || null, why: body.w || null, note: body.n || null, changes: body.c || null, unsure: body.u || null, feel: body.f || null, short: !!body.k, times: body.x || null };
   }
 
   /* Adaptive test. Rules are the routing note in the adaptive bank:
@@ -437,7 +443,36 @@ a{color:var(--accent)}
     return out;
   }
 
+  /* What the timing and her "not sure" marks say about each question.
+     Four kinds worth acting on: sure-but-wrong (a wrong idea she trusts), right-but-unsure (fragile),
+     fast-and-wrong (misread), slow-but-right (knows it, needs fluency), slow-and-wrong (a real gap). */
+  function insights(items, per, times, unsure) {
+    var timed = items.filter(function (it) { return times && times[it.id] > 0; });
+    var secs = timed.map(function (it) { return times[it.id]; }).sort(function (a, b) { return a - b; });
+    var median = secs.length ? secs[Math.floor(secs.length / 2)] : 0;
+    var isUnsure = {}; (unsure || []).forEach(function (id) { isUnsure[id] = true; });
+    var out = { timed: timed.length, median: median, sureWrong: [], unsureRight: [], fastWrong: [], slowRight: [], slowWrong: [], byType: {} };
+    var fast = Math.max(12, median * 0.4), slow = Math.max(60, median * 1.8);
+    items.forEach(function (it) {
+      var p = per[it.id], t = times ? times[it.id] : 0;
+      if (p === undefined) return;
+      if (p < 1 && !isUnsure[it.id] && (unsure || []).length) out.sureWrong.push(it.id);
+      if (p >= 1 && isUnsure[it.id]) out.unsureRight.push(it.id);
+      if (t > 0) {
+        if (p < 1 && t <= fast) out.fastWrong.push(it.id);
+        else if (p < 1 && t >= slow) out.slowWrong.push(it.id);
+        else if (p >= 1 && t >= slow) out.slowRight.push(it.id);
+        var k = it.calc ? 'Calculations' : it.type === 'multi' ? 'Select-all' : it.type === 'single' ? 'Single answer' : 'Next-Gen';
+        var b = out.byType[k] = out.byType[k] || { secs: 0, n: 0 };
+        b.secs += t; b.n += 1;
+      }
+    });
+    Object.keys(out.byType).forEach(function (k) { out.byType[k].secs = Math.round(out.byType[k].secs / out.byType[k].n); });
+    return out;
+  }
+
   var Core = {
+    insights: insights,
     buildMix: buildMix,
     parseNumber: parseNumber, isAnswered: isAnswered, score: score, trapFor: trapFor,
     encodeResp: encodeResp, decodeResp: decodeResp, answerText: answerText, markAttempt: markAttempt,
@@ -575,7 +610,7 @@ a{color:var(--accent)}
     S.attempts.forEach(function (a) {
       Object.keys(a.per).forEach(function (id) {
         var it = itemsById[id];
-        if (!it || a.per[id] >= 1 || seen[id]) return;
+        if (!it || seen[id] || (a.per[id] >= 1 && (a.unsure || []).indexOf(id) < 0)) return;
         seen[id] = true;
         cards.push({ id: 'M:' + id, front: it.stem, back: C.answerText(it) + '\n\n' + (it.rule || it.why), src: 'From a miss' });
       });
@@ -737,16 +772,6 @@ a{color:var(--accent)}
     setTimeout(size, 0);
     return { el: cv, clear: function () { strokes.length = 0; size(); } };
   }
-  function togglePad() {
-    var old = document.querySelector('.sheet');
-    if (old) { old.remove(); return; }
-    var pad = makePad(Math.round(window.innerHeight * 0.38), padStrokes);
-    document.body.appendChild(h('div', { class: 'sheet' },
-      h('div', { class: 'row', style: 'margin-bottom:6px' }, h('b', null, 'Scratch pad'),
-        h('span', null, h('button', { class: 'plain', onclick: pad.clear }, 'Clear'), h('button', { class: 'plain', onclick: togglePad }, 'Close'))),
-      pad.el));
-  }
-
   /* ---------- pictures and the exercises made from them ---------- */
   function bodyHF() {
     var ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg');
@@ -901,7 +926,7 @@ a{color:var(--accent)}
     (l.sections || []).forEach(function (sec) {
       out.push(h('div', { class: 'card' }, sec.h ? h('h3', { style: 'margin-top:0' }, sec.h) : null, h('div', { class: 'stem' }, sec.body)));
     });
-    if (l.practice) out.push(h('button', { onclick: function () { startRun('lesson:' + l.id, 'Practice: ' + l.title, l.practice, 'page'); } }, 'Try ' + l.practice.length + ' questions on this'));
+    if (l.practice) out.push(h('button', { onclick: function () { startRun('lesson:' + l.id, 'Practice: ' + l.title, l.practice, 'learn'); } }, 'Try ' + l.practice.length + ' questions on this'));
     show(out);
   }
   function viewSet(id) {
@@ -924,11 +949,13 @@ a{color:var(--accent)}
         h('button', { onclick: start('adaptive') }, draft ? 'Start again from question 1' : 'Start the test')));
     } else {
       out.push(h('div', { class: 'card stack' },
-        h('button', { onclick: start('page') }, draft ? 'Start again: all questions on one page' : 'Start: all questions on one page'),
-        h('button', { class: 'ghost', onclick: start('learn') }, 'Study mode: see the answer after each question'),
-        h('button', { class: 'ghost', onclick: start('exam') }, 'Exam mode: one at a time, no going back'),
+        h('button', { onclick: start('learn') }, draft ? 'Start again: practice' : 'Practice'),
+        h('div', { class: 'small soft' }, 'One question at a time. You think first, answer, and see why straight away. Best while a topic is new.'),
+        h('button', { class: 'ghost', onclick: start('exam') }, 'Test myself'),
+        h('div', { class: 'small soft' }, 'One question at a time, no going back, answers at the end. Like the exam.'),
         s.items.length >= 30 ? h('button', { class: 'ghost', onclick: function () { startShort(s); } }, 'Tired or short on time: 20 questions') : null,
-        h('p', { class: 'small soft' }, 'Not sure which? Study mode while a topic is new, one page or exam mode to test yourself. Your work is saved as you go.')));
+        h('p', { class: 'small soft' }, 'Each question is timed, so you can see where you are fast and where you struggle. Your work is saved as you go. ',
+          h('a', { href: '#', onclick: function (e) { e.preventDefault(); start('page')(); } }, 'Or see all questions on one page.'))));
     }
     if (mine.length || old.length) {
       out.push(h('h2', null, 'Your results'));
@@ -961,7 +988,7 @@ a{color:var(--accent)}
     });
     ids.sort(function (x, y) { return s.items.indexOf(x) - s.items.indexOf(y); });
     if (S.drafts[s.id] && Object.keys(S.drafts[s.id].answers).length) return startRun(s.id, s.title, s.items.slice(), 'page');
-    S.drafts[s.id] = { key: s.id, title: s.title + ' (short)', ids: ids, mode: 'page', short: true, answers: {}, started: new Date().toISOString(), elapsed: 0, idx: 0, delivered: [] };
+    S.drafts[s.id] = { key: s.id, title: s.title + ' (short)', ids: ids, mode: 'learn', short: true, answers: {}, started: new Date().toISOString(), elapsed: 0, idx: 0, delivered: [] };
     save(); go('#run/' + encodeURIComponent(s.id));
   }
   /* What she is weak at right now, from everything recorded on this phone plus her earlier baseline. */
@@ -992,7 +1019,7 @@ a{color:var(--accent)}
     if (S.drafts[key]) return go('#run/' + encodeURIComponent(key));
     var ids = C.buildMix(BANK.items, w.stats, w, today(), 15);
     if (ids.length < 5) return toast('Do one full set first; then this builds itself from your results');
-    startRun(key, "Today's mix", ids, 'page');
+    startRun(key, "Today's mix", ids, 'learn');
   }
 
   function retryFromNumbers(s, a) {
@@ -1020,7 +1047,7 @@ a{color:var(--accent)}
     save();
     go('#run/' + encodeURIComponent(key));
   }
-  function stopTimer() { if (timerHandle) { clearInterval(timerHandle); timerHandle = null; } }
+  function stopTimer() { if (timerHandle) { clearInterval(timerHandle); timerHandle = null; } qClock = null; }
 
   function viewRun(key) {
     var d = S.drafts[key];
@@ -1028,7 +1055,9 @@ a{color:var(--accent)}
     stopTimer();
     curSeed = d.seed || '';
     padStrokes = [];
-    var $time = h('span', { class: 't' }, fmtTime(d.elapsed));
+    var $time = h('span', { class: 't small soft' }, fmtTime(d.elapsed));
+    var $qtime = h('span', { class: 't', title: 'Time on this question' }, '');
+    qClock = null;
     var $count = h('span', { class: 'small soft' });
     var tick = 0;
     timerHandle = setInterval(function () {
@@ -1038,7 +1067,8 @@ a{color:var(--accent)}
         var left = 90 * 60 - d.elapsed;
         $time.textContent = fmtTime(Math.max(0, left)) + ' left';
         if (left <= 0) { toast('Time is up'); return finishRun(key); }
-      } else $time.textContent = fmtTime(d.elapsed);
+      } else $time.textContent = d.mode === 'page' ? fmtTime(d.elapsed) : '';
+      if (qClock) qClock();
       if (++tick % 10 === 0) save();
     }, 1000);
     var onAnswer = function () { save(); refreshCount(); };
@@ -1050,7 +1080,7 @@ a{color:var(--accent)}
 
     var bar = h('div', { class: 'bar' },
       h('button', { class: 'plain', onclick: function () { save(); stopTimer(); go('#home'); toast('Saved. Carry on any time.'); } }, 'Pause'),
-      $count, h('button', { class: 'plain', 'aria-label': 'Scratch pad', onclick: togglePad }, '✎ Pad'), $time);
+      $count, h('button', { class: 'plain', 'aria-label': 'Tools: scratch pad, calculator, notes', onclick: togglePad }, '✎ Tools'), h('span', null, $qtime, ' ', $time));
 
     if (d.mode === 'page') {
       var body = [], lastCase = null;
@@ -1063,6 +1093,7 @@ a{color:var(--accent)}
       show(bar, h('div', { style: 'padding-top:6px' }, body));
     } else {
       var $slot = h('div');
+      var target = function (it) { return it.calc ? 150 : (it.type === 'single' ? 75 : 100); };   // seconds: exam pace is about 1.5 to 2 minutes
       var showOne = function () {
         var id;
         if (d.mode === 'adaptive') {
@@ -1079,32 +1110,62 @@ a{color:var(--accent)}
         }
         var it = itemsById[id];
         var n = d.mode === 'adaptive' ? d.delivered.length + 1 : d.idx + 1;
-        var shownAt = d.elapsed;
-        var $next = h('button', { disabled: !C.isAnswered(it, d.answers[id]), onclick: function () {
-          d.times = d.times || {}; d.times[id] = d.elapsed - shownAt;
+        if (d.qId !== id) { d.qId = id; d.qStart = d.elapsed; }                       // survives a pause or a locked phone
+        d.times = d.times || {}; d.changes = d.changes || {}; d.unsure = d.unsure || {};
+        curTools = { id: id, title: 'Question ' + n };
+        qClock = function () {
+          var q = d.elapsed - d.qStart, over = q > target(it);
+          $qtime.textContent = fmtTime(q); $qtime.style.color = over ? 'var(--warn)' : '';
+        };
+        qClock();
+        var answeredAt = null;
+        var done = function () {
+          d.times[id] = answeredAt !== null ? answeredAt : d.elapsed - d.qStart;   // reading the explanation is not thinking time
           if (d.mode === 'adaptive') {
             d.delivered.push({ id: id, level: it.level, caseId: it.caseId || null, pts: C.score(it, d.answers[id]) });
             d.current = null;
           } else d.idx += 1;
-          save(); padStrokes.length = 0; var sh = document.querySelector('.sheet'); if (sh) sh.remove();
+          d.qId = null;
+          save(); padStrokes.length = 0; closeTools();
           showOne(); window.scrollTo(0, 0);
-        } }, 'Next');
+        };
+        var $next = h('button', { disabled: !C.isAnswered(it, d.answers[id]), onclick: done }, 'Next');
+        var $unsure = h('button', { class: 'ghost sm', style: 'width:100%', onclick: function () {
+          d.unsure[id] = d.unsure[id] ? 0 : 1; save();
+          $unsure.textContent = d.unsure[id] ? '✓ Marked: not sure' : "I'm not sure about this one";
+        } }, d.unsure[id] ? '✓ Marked: not sure' : "I'm not sure about this one");
         var $check = null;
         if (d.mode === 'learn') {
           $next.style.display = 'none';
           $check = h('button', { disabled: !C.isAnswered(it, d.answers[id]), onclick: function () {
+            answeredAt = d.times[id] = d.elapsed - d.qStart;                              // thinking time stops at Check
             var pts = C.score(it, d.answers[id]), trap = C.trapFor(it, d.answers[id]);
             Array.prototype.forEach.call($slot.querySelectorAll('.q input, .q select'), function (x) { x.disabled = true; });
-            $check.remove(); $next.style.display = ''; $next.disabled = false;
+            $check.remove(); $unsure.remove(); $next.style.display = ''; $next.disabled = false;
+            var secs = d.times[id], slow = secs > target(it) * 1.5;
             $slot.insertBefore(h('div', { class: 'fb ' + (pts >= 1 ? 'ok' : pts > 0 ? 'mid' : 'no') },
-              h('b', null, pts >= 1 ? 'Right.' : pts > 0 ? 'Partly right.' : 'Not this time.'),
+              h('b', null, pts >= 1 ? (d.unsure[id] ? 'Right, and you were not sure: read why, so next time you are.' : 'Right.') : pts > 0 ? 'Partly right.' : (d.unsure[id] ? 'Not this time.' : 'Not this time, and you felt sure. This one matters most.')),
+              h('div', { class: 'small soft' }, fmtTime(secs) + (slow ? ' · slower than exam pace (' + fmtTime(target(it)) + ')' : '')),
               pts < 1 ? h('div', { style: 'white-space:pre-wrap;margin:6px 0' }, h('span', { class: 'soft' }, 'Answer: '), C.answerText(it)) : null,
               trap ? h('div', null, h('b', null, 'The trap: '), trap) : null,
               h('div', { class: 'why' }, it.why)), $next);
           } }, 'Check my answer');
         }
+        var card = renderItem(it, n, d.answers, function () {
+          d.changes[id] = (d.changes[id] || 0) + 1;
+          save(); $next.disabled = !C.isAnswered(it, d.answers[id]); if ($check) $check.disabled = $next.disabled;
+        }, false);
+        // Think first: in practice she commits to an answer before the options appear.
+        var optEls = card.querySelectorAll('label.opt');
+        if (d.mode === 'learn' && optEls.length && !C.isAnswered(it, d.answers[id]) && !S.noThink) {
+          Array.prototype.forEach.call(optEls, function (el) { el.style.display = 'none'; });
+          var $think = h('div', { class: 'card tint' }, h('b', null, 'Think first'),
+            h('p', { class: 'small' }, 'Before you see the options: what would you do, and why? Say it, or jot it on the pad.'),
+            h('button', { onclick: function () { $think.remove(); Array.prototype.forEach.call(optEls, function (el) { el.style.display = ''; }); d.think = d.think || {}; d.think[id] = d.elapsed - d.qStart; } }, 'Show the options'));
+          card.appendChild($think);
+        }
         $slot.innerHTML = '';
-        add($slot, [renderItem(it, n, d.answers, function () { save(); $next.disabled = !C.isAnswered(it, d.answers[id]); if ($check) $check.disabled = $next.disabled; }, false), $check, $next,
+        add($slot, [card, $check, $next, $unsure,
           d.mode === 'learn' ? null : h('p', { class: 'small soft center' }, 'No going back in this mode, like the real exam.')]);
         refreshCount();
       };
@@ -1113,6 +1174,60 @@ a{color:var(--accent)}
     }
     refreshCount();
   }
+
+  /* ---------- tools on every question: scratch pad, notes, calculator ---------- */
+  var curTools = { id: null, title: '' }, qClock = null;
+  function closeTools() { var s = document.querySelector('.sheet'); if (s) s.remove(); }
+  function calcEval(expr) {            // + - × ÷ and brackets, no eval
+    var t = expr.replace(/×/g, '*').replace(/÷/g, '/').match(/\d*\.?\d+|[-+*/()]/g) || [], i = 0;
+    var num = function () {
+      if (t[i] === '-') { i++; return -num(); }
+      if (t[i] === '(') { i++; var v = sum(); i++; return v; }
+      return parseFloat(t[i++]);
+    };
+    var prod = function () { var v = num(); while (t[i] === '*' || t[i] === '/') { var o = t[i++], r = num(); v = o === '*' ? v * r : v / r; } return v; };
+    var sum = function () { var v = prod(); while (t[i] === '+' || t[i] === '-') { var o = t[i++], r = prod(); v = o === '+' ? v + r : v - r; } return v; };
+    var out = sum();
+    return isFinite(out) ? Math.round(out * 1e6) / 1e6 : NaN;
+  }
+  function openTools(which) {
+    closeTools();
+    var body = h('div');
+    var tabs = [['pad', '✎ Pad'], ['calc', '🖩 Calculator'], ['note', '✍ Notes']];
+    var draw = function (w) {
+      body.innerHTML = '';
+      Array.prototype.forEach.call(sheet.querySelectorAll('.tooltab'), function (b) { b.className = 'tooltab plain' + (b.getAttribute('data-w') === w ? ' on' : ''); });
+      if (w === 'pad') {
+        var pad = makePad(Math.round(window.innerHeight * 0.36), padStrokes);
+        add(body, [pad.el, h('button', { class: 'plain', onclick: pad.clear }, 'Clear')]);
+      } else if (w === 'calc') {
+        var $d = h('input', { type: 'text', readonly: 'readonly', class: 'num', style: 'width:100%;text-align:right', 'aria-label': 'Calculator display', value: S.calc || '' });
+        var press = function (k) {
+          var v = $d.value;
+          if (k === 'C') v = ''; else if (k === '⌫') v = v.slice(0, -1);
+          else if (k === '=') { var r = calcEval(v); v = isNaN(r) ? 'Error' : String(r); }
+          else v = (v === 'Error' ? '' : v) + k;
+          $d.value = v; S.calc = v;
+        };
+        add(body, [$d, h('div', { class: 'keys' }, ['7', '8', '9', '÷', '4', '5', '6', '×', '1', '2', '3', '-', '0', '.', '(', ')', 'C', '⌫', '+', '='].map(function (k) {
+          return h('button', { class: /[0-9.]/.test(k) ? 'ghost' : '', onclick: function () { press(k); } }, k);
+        })), h('p', { class: 'small soft' }, 'Write the units on the pad. The calculator does not know mg from mL.')]);
+      } else {
+        S.notes = S.notes || {};
+        var ta = h('textarea', { 'aria-label': 'Your note on this question', placeholder: 'A note to yourself about this question. It is saved with the question and shown again when you review it.', style: 'font-family:inherit;min-height:120px' }, S.notes[curTools.id] || '');
+        ta.addEventListener('input', function () { if (ta.value.trim()) S.notes[curTools.id] = ta.value; else delete S.notes[curTools.id]; save(); });
+        add(body, ta);
+      }
+    };
+    var sheet = h('div', { class: 'sheet' },
+      h('div', { class: 'row', style: 'margin-bottom:6px' },
+        h('span', null, tabs.map(function (t) { return h('button', { class: 'tooltab plain', 'data-w': t[0], onclick: function () { draw(t[0]); } }, t[1]); })),
+        h('button', { class: 'plain', onclick: closeTools }, 'Close')),
+      body);
+    document.body.appendChild(sheet);
+    draw(which || 'pad');
+  }
+  function togglePad() { if (document.querySelector('.sheet')) closeTools(); else openTools('pad'); }
 
   function shuffled(list, seedText) {
     var seed = 7; String(seedText).split('').forEach(function (c) { seed = (seed * 31 + c.charCodeAt(0)) >>> 0; });
@@ -1241,7 +1356,7 @@ a{color:var(--accent)}
     var setId = /^(retry|lesson|mix):/.test(key) ? 'retry' : key;
     key = key.replace(/^(retry:)+/, 'retry:');
     var attempt = { set: setId, of: key, title: d.title, mode: d.mode, started: d.started, finished: new Date().toISOString(), secs: d.elapsed,
-      order: (d.mode === 'adaptive' || setId === 'retry' || d.short) ? ids : null, answers: d.answers, times: d.times || null, short: !!d.short, per: m.per, score: m.score, max: m.max, pct: m.pct, sent: false };
+      order: (d.mode === 'adaptive' || setId === 'retry' || d.short) ? ids : null, answers: d.answers, times: d.times || null, changes: d.changes || null, unsure: d.unsure ? Object.keys(d.unsure).filter(function (k) { return d.unsure[k]; }) : null, think: d.think || null, short: !!d.short, per: m.per, score: m.score, max: m.max, pct: m.pct, sent: false };
     if (d.mode === 'adaptive') attempt.adaptive = C.adaptiveReport(d.delivered);
     S.attempts.push(attempt);
     Object.keys(m.per).forEach(function (id) { if (m.per[id] < 1) S.cards['M:' + id] = { box: 0, due: today() }; });
@@ -1304,7 +1419,7 @@ a{color:var(--accent)}
       a.sent ? 'Send to Nova again' : 'Send this result to Nova'));
     var wrongIds = ids.filter(function (id) { return a.per[id] < 1; });
     if (wrongIds.length) {
-      out.push(h('button', { class: 'ghost', style: 'margin-top:10px', onclick: function () { startRun('retry:' + String(a.of || a.set).replace(/^(retry:)+/, ''), 'Retry: ' + a.title.replace(/^Retry: /, ''), wrongIds, 'page'); } },
+      out.push(h('button', { class: 'ghost', style: 'margin-top:10px', onclick: function () { startRun('retry:' + String(a.of || a.set).replace(/^(retry:)+/, ''), 'Retry: ' + a.title.replace(/^Retry: /, ''), wrongIds, 'learn'); } },
         'Retry the ' + wrongIds.length + ' I missed'));
       out.push(h('p', { class: 'small soft' }, wrongIds.length + (wrongIds.length === 1 ? ' miss was' : ' misses were') + ' added to My rules.'));
     }
@@ -1317,6 +1432,21 @@ a{color:var(--accent)}
           h('div', { class: 'meter' }, h('i', { style: 'width:' + p + '%' })));
       }));
     };
+    var ins = a.times ? C.insights(items, a.per, a.times, a.unsure || []) : null;
+    if (ins && ins.timed >= 5) {
+      var name = function (id) { return 'Q' + (ids.indexOf(id) + 1); };
+      var line = function (label, list, hint) { return list.length ? h('div', { class: 'kv', style: 'display:block' }, h('b', null, label + ': ' + list.map(name).join(', ')), h('div', { class: 'small soft' }, hint)) : null; };
+      out.push(h('div', { class: 'card' }, h('h3', { style: 'margin-top:0' }, 'What this set showed'),
+        h('p', { class: 'small soft' }, 'Typical time per question: ' + fmtTime(ins.median) + '. Exam pace is about 1:30 to 2:00.'),
+        line('Sure, but wrong', ins.sureWrong, 'A wrong idea you trust. Fix these first: read why, then write the rule in your own words.'),
+        line('Right, but not sure', ins.unsureRight, 'Nearly yours. They are in My rules so they come back until you are sure.'),
+        line('Fast and wrong', ins.fastWrong, 'Probably misread. Read the last line of the question first.'),
+        line('Slow, but right', ins.slowRight, 'You know it; it needs speed. These come back in your mix.'),
+        line('Slow and wrong', ins.slowWrong, 'A real gap. A short lesson will help more than more questions.'),
+        Object.keys(ins.byType).length > 1 ? h('p', { class: 'small', style: 'margin-top:10px' }, Object.keys(ins.byType).map(function (k) { return k + ' ' + fmtTime(ins.byType[k].secs); }).join(' · ')) : null));
+      ins.unsureRight.forEach(function (id) { if (!S.cards['M:' + id]) S.cards['M:' + id] = { box: 1, due: addDays(1) }; });
+      save();
+    }
     out.push(bars('By type of question', m.byType), bars('By exam category', m.byCat));
     if (a.adaptive) out.push(h('div', { class: 'card' }, h('h3', { style: 'margin-top:0' }, 'Your path'),
       h('p', { class: 'small soft' }, 'Difficulty of each question, 1 easy to 5 hard:'), h('p', null, a.adaptive.path.join(' '))));
@@ -1340,7 +1470,8 @@ a{color:var(--accent)}
       add(det, h('div', { class: 'stem', style: 'margin-top:10px' }, it.type === 'cloze' ? it.text : it.stem));
       if (it.opts) add(det, h('div', { class: 'small', style: 'margin:8px 0;white-space:pre-wrap' }, it.opts.map(function (o) { return o.k + '. ' + o.t; }).join('\n')));
       var mine = C.encodeResp(it, a.answers[id]);
-      add(det, h('div', { class: 'kv' }, h('span', { class: 'soft' }, 'Your answer'), h('b', null, mine || 'blank')));
+      add(det, h('div', { class: 'kv' }, h('span', { class: 'soft' }, 'Your answer' + (a.times && a.times[id] ? ' · ' + fmtTime(a.times[id]) : '')), h('b', null, mine || 'blank')));
+      if ((S.notes || {})[id]) add(det, h('div', { class: 'card tint small' }, h('b', null, 'Your note: '), S.notes[id]));
       add(det, h('div', { style: 'white-space:pre-wrap;margin:8px 0' }, h('span', { class: 'soft' }, 'Correct: '), h('b', null, C.answerText(it))));
       var trap = C.trapFor(it, a.answers[id]);
       if (trap) add(det, h('div', { class: 'card', style: 'border-color:var(--warn)' }, h('b', null, 'The trap: '), trap));
@@ -1429,6 +1560,29 @@ a{color:var(--accent)}
       out.push(h('div', { class: 'card' }, Object.keys(type).map(function (k) {
         return h('div', { class: 'kv' }, h('span', null, k), h('b', null, fmtPct(100 * type[k].s / type[k].n) + ' of ' + type[k].n));
       })));
+    }
+    // where she is strong, what needs work, how fast, how sure: from everything done in the app
+    var tp = {}, sp = {}, sure = { n: 0, wrong: 0 }, doubt = { n: 0, right: 0 };
+    S.attempts.forEach(function (a) {
+      Object.keys(a.per).forEach(function (id) {
+        var it = itemsById[id]; if (!it) return;
+        var t = tp[it.topic] = tp[it.topic] || { s: 0, n: 0 }; t.s += a.per[id]; t.n += 1;
+        if (a.times && a.times[id] > 0) { var k = it.calc ? 'Calculations' : it.type === 'multi' ? 'Select-all' : 'Other questions'; var b = sp[k] = sp[k] || { s: 0, n: 0 }; b.s += a.times[id]; b.n += 1; }
+        if (a.unsure) { if (a.unsure.indexOf(id) >= 0) { doubt.n++; if (a.per[id] >= 1) doubt.right++; } else { sure.n++; if (a.per[id] < 1) sure.wrong++; } }
+      });
+    });
+    var nice = function (k) { return k.replace(/-/g, ' '); };
+    var tk = Object.keys(tp).filter(function (k) { return tp[k].n >= 4; });
+    var strongT = tk.filter(function (k) { return tp[k].s / tp[k].n >= 0.8; }), weakT = tk.filter(function (k) { return tp[k].s / tp[k].n < 0.65; });
+    if (tk.length) {
+      out.push(h('h2', null, 'Where you stand'));
+      out.push(h('div', { class: 'card' },
+        h('b', null, 'Strong'), h('div', { class: 'chips', style: 'margin:6px 0 12px' }, strongT.length ? strongT.map(function (k) { return h('span', { class: 'chip done' }, nice(k) + ' ' + Math.round(100 * tp[k].s / tp[k].n) + '%'); }) : h('span', { class: 'small soft' }, 'Building. Keep going.')),
+        h('b', null, 'Needs work'), h('div', { class: 'chips', style: 'margin:6px 0 12px' }, weakT.length ? weakT.map(function (k) { return h('span', { class: 'chip' }, nice(k) + ' ' + Math.round(100 * tp[k].s / tp[k].n) + '%'); }) : h('span', { class: 'small soft' }, 'Nothing under 65% right now.')),
+        Object.keys(sp).length ? h('div', { class: 'small' }, h('b', null, 'Time per question: '), Object.keys(sp).map(function (k) { return k + ' ' + fmtTime(Math.round(sp[k].s / sp[k].n)); }).join(' · '), h('div', { class: 'soft' }, 'Exam pace is about 1:30 to 2:00.')) : null,
+        sure.n + doubt.n >= 15 ? h('div', { class: 'small', style: 'margin-top:10px' }, h('b', null, 'How well you know what you know: '),
+          'when you felt sure you were right ' + Math.round(100 * (sure.n - sure.wrong) / Math.max(1, sure.n)) + '% of the time' + (doubt.n >= 4 ? '; when you doubted, you were still right ' + Math.round(100 * doubt.right / doubt.n) + '% of the time.' : '.')) : null,
+        h('p', { class: 'small soft' }, 'Your mix and your next sets lean towards "needs work" and keep the strong ones alive.')));
     }
     out.push(h('h2', null, 'Every test'));
     out.push(h('table', { class: 'plain' }, rows.slice().reverse().map(function (r) {
