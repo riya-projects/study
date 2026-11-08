@@ -309,6 +309,7 @@ a{color:var(--accent)}
     if (attempt.unsure && attempt.unsure.length) body.u = attempt.unsure;                    // questions she marked "not sure"
     if (attempt.feel) body.f = attempt.feel;            // how the set felt: easy | right | hard
     if (attempt.short) body.k = 1;                      // she chose the short version
+    if (attempt.adaptive && attempt.adaptive.v === 2) body.ad = { w: attempt.adaptive.why || null, u: attempt.adaptive.unmet || null, b: attempt.adaptive.unbalanced ? 1 : 0, s: attempt.adaptive.short || null };   // why a v2 test ended
     if (attempt.times) body.x = attempt.times;          // seconds per question, one-at-a-time modes only
     return 'RS1.' + b64uEncode(JSON.stringify(body));
   }
@@ -321,7 +322,7 @@ a{color:var(--accent)}
     Object.keys(body.a).forEach(function (id) {
       if (itemsById[id]) answers[id] = decodeResp(itemsById[id], body.a[id]);
     });
-    return { set: body.s, mode: body.m, finished: body.t, secs: body.d, order: body.o, answers: answers, pct: body.p, of: body.r || null, days: body.g || null, why: body.w || null, note: body.n || null, changes: body.c || null, unsure: body.u || null, feel: body.f || null, short: !!body.k, times: body.x || null };
+    return { set: body.s, mode: body.m, finished: body.t, secs: body.d, order: body.o, answers: answers, pct: body.p, of: body.r || null, days: body.g || null, why: body.w || null, note: body.n || null, changes: body.c || null, unsure: body.u || null, feel: body.f || null, short: !!body.k, times: body.x || null, adaptiveEnd: body.ad ? { why: body.ad.w, unmet: body.ad.u, unbalanced: !!body.ad.b, short: body.ad.s || null } : null };
   }
 
   /* Adaptive test. Rules are the routing note in the adaptive bank:
@@ -329,8 +330,10 @@ a{color:var(--accent)}
      items in a row; stop from item 30 once the last ten average 3.5+ or 2.5-, or at 50. */
   var ADAPT = { min: 30, max: 50, caseA: { level: 3, from: 10 }, caseB: { level: 4, from: 20 } };
 
-  function adaptiveInit(items) {
-    var levels = {}, cases = {}, caseOrder = [];
+  function adaptiveInit(items, cfg) {
+    var levels = {}, cases = {}, caseOrder = [], byId = {};
+    items.forEach(function (it) { byId[it.id] = it; });
+    var pc = cfg && cfg.v === 2 ? v2cfg(cfg) : null;
     items.forEach(function (it) {
       if (it.caseId) {
         if (!cases[it.caseId]) { cases[it.caseId] = { id: it.caseId, level: it.level, items: [] }; caseOrder.push(it.caseId); }
@@ -339,11 +342,12 @@ a{color:var(--accent)}
         (levels[it.level] = levels[it.level] || []).push(it.id);
       }
     });
-    return { levels: levels, cases: cases, caseOrder: caseOrder };
+    return { levels: levels, cases: cases, caseOrder: caseOrder, byId: byId, list: items, cfg: pc, problems: pc ? validatePool(items, pc) : [] };
   }
 
   /* delivered: [{id, level, pts, caseId}] in order. Returns {done} or {id, note}. */
   function adaptiveNext(pool, delivered) {
+    if (pool.cfg) return adaptiveNext2(pool, delivered);
     var n = delivered.length;
     var used = {}; delivered.forEach(function (d) { used[d.id] = true; });
     var last = delivered[n - 1];
@@ -400,7 +404,197 @@ a{color:var(--accent)}
     return { id: pick, note: note };
   }
 
-  function adaptiveReport(delivered) {
+  /* ---------- Adaptive v2 (a set opts in with cfg: {v: 2, ...}); v1 sets above are untouched ----------
+     Real-exam-like shape: 85 to 150 questions, three case studies, test-plan balance among the stand-alone items,
+     guaranteed weak-area quotas (case items count towards a quota), and a stopping rule on a running ability estimate.
+     Levels are our own judgement, not measured on candidates, so this imitates the real rule but is not a true NCLEX score.
+     A pool that cannot meet the rules is rejected up front (adaptiveInit(...).problems) instead of running as a normal test. */
+  var V2 = {
+    v: 2, min: 85, max: 150, minutes: 300, cut: 3, slope: 1.2, z: 1.96, prior: { mean: 3, sd: 1.5 }, cases: 3, caseSize: 6,
+    caseFrom: [12, 30, 48], caseBy: [30, 48, 66],
+    blueprint: { 'Management of Care': [15, 21], 'Pharmacological and Parenteral Therapies': [13, 19], 'Physiological Adaptation': [11, 17], 'Safety and Infection Control': [10, 16],
+                 'Reduction of Risk Potential': [9, 15], 'Health Promotion and Maintenance': [6, 12], 'Psychosocial Integrity': [6, 12], 'Basic Care and Comfort': [6, 12] },
+    quota: [{ name: 'calculation', match: { calc: true }, min: 4, by: 80 }, { name: 'select-all', match: { type: 'multi' }, min: 12, by: 80 },
+            { name: 'maternity and paediatrics', match: { tag: 'maternity-paeds' }, min: 5, by: 80 }, { name: 'acid-base and potassium', match: { tag: 'acid-base-potassium' }, min: 5, by: 80 },
+            { name: 'heart failure', match: { tag: 'heart-failure' }, min: 4, by: 80 }, { name: 'health promotion', match: { cat: 'Health Promotion and Maintenance' }, min: 8, by: 80 }]
+  };
+  function v2cfg(c) { var o = {}; Object.keys(V2).forEach(function (k) { o[k] = c[k] !== undefined ? c[k] : V2[k]; }); return o; }
+  function qMatch(it, m) {
+    if (m.calc !== undefined && !!it.calc !== m.calc) return false;
+    if (m.type && it.type !== m.type) return false;
+    if (m.tag && it.quota !== m.tag) return false;
+    if (m.cat && it.cat !== m.cat) return false;
+    return true;
+  }
+  function hash2(str) { var h = 2166136261; for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h; }
+  /* Why a pool cannot run as a v2 test: [] when it can. Quota tags are the item field "quota"; a group nobody carries is a problem, never "met". */
+  function validatePool(items, cfg) {
+    var errs = [], cases = {}, alone = [], minStand = cfg.min - cfg.caseSize * cfg.cases;
+    items.forEach(function (it) {
+      if (!(it.level >= 1 && it.level <= 5 && it.level === Math.round(it.level))) errs.push(it.id + ': level must be a whole number from 1 to 5');
+      if (it.caseId) (cases[it.caseId] = cases[it.caseId] || []).push(it); else alone.push(it);
+    });
+    var ids = Object.keys(cases), whole = ids.filter(function (id) { return cases[id].length === cfg.caseSize; });
+    ids.forEach(function (id) { if (cases[id].length !== cfg.caseSize) errs.push('case ' + id + ' has ' + cases[id].length + ' items, not ' + cfg.caseSize); });
+    if (whole.length < cfg.cases) errs.push('needs ' + cfg.cases + ' whole case studies of ' + cfg.caseSize + ', has ' + whole.length);
+    if (alone.length < minStand) errs.push('needs at least ' + minStand + ' stand-alone items, has ' + alone.length);
+    cfg.quota.forEach(function (g) {
+      var have = alone.filter(function (it) { return qMatch(it, g.match); }).length;       // only cfg.cases cases can be given: count the richest ones
+      have += whole.map(function (id) { return cases[id].filter(function (it) { return qMatch(it, g.match); }).length; }).sort(function (a, b) { return b - a; }).slice(0, cfg.cases).reduce(function (x, y) { return x + y; }, 0);
+      if (have < g.min) errs.push('quota "' + g.name + '" needs ' + g.min + ' items, the pool has ' + have);
+    });
+    Object.keys(cfg.blueprint).forEach(function (c) {
+      var maxStand = cfg.max - cfg.caseSize * cfg.cases;                       // the test can run to this many stand-alone items; the category floor must hold there too
+      var lo = Math.ceil(cfg.blueprint[c][0] * maxStand / 100), have = alone.filter(function (it) { return it.cat === c; }).length;
+      if (have < lo) errs.push('category ' + c + ' needs ' + lo + ' stand-alone items (its minimum share at ' + maxStand + ' stand-alone questions), has ' + have);
+    });
+    return errs;
+  }
+  /* running ability estimate on our own 0 to 6 practice scale: posterior mean and sd on a grid (a right answer = 0.5 point or more) */
+  function estimate(delivered, cfg) {
+    var post = [], tot = 0, i, j, th, lp, p, d, m = 0, v = 0;
+    for (i = 0; i <= 60; i++) {
+      th = i * 0.1; lp = -0.5 * Math.pow((th - cfg.prior.mean) / cfg.prior.sd, 2);
+      for (j = 0; j < delivered.length; j++) {
+        d = delivered[j]; p = 1 / (1 + Math.exp(-cfg.slope * (th - d.level)));
+        lp += Math.log(d.pts >= 0.5 ? p : 1 - p);
+      }
+      post.push(lp);
+    }
+    var mx = Math.max.apply(null, post);
+    for (i = 0; i <= 60; i++) { post[i] = Math.exp(post[i] - mx); tot += post[i]; }
+    for (i = 0; i <= 60; i++) m += (i * 0.1) * post[i] / tot;
+    for (i = 0; i <= 60; i++) v += Math.pow(i * 0.1 - m, 2) * post[i] / tot;
+    return { theta: m, se: Math.sqrt(v) };
+  }
+  /* The saved history without questions that were withdrawn from the bank since: the phone, the routing and the server all use this one list. */
+  function adaptiveNormalize(byId, delivered) { return (delivered || []).filter(function (d) { return byId[d.id]; }); }
+  /* One plain sentence on why a test ended; ad = {why, unmet, unbalanced}. Shared by the phone and the server report. */
+  function adaptiveEndText(ad) {
+    var w = ad && ad.why, miss = [];
+    if (ad && ad.unmet && ad.unmet.length) miss.push('weak-area items still missing: ' + ad.unmet.join(', '));
+    if (ad && ad.unbalanced) miss.push('the test-plan mix was not exact');
+    var sh = ad && ad.short && ad.short.length ? ' A case study had fewer than 6 questions because a question was withdrawn.' : '';
+    if (w === 'above') return 'Stopped because the estimate was clearly above level 3.' + sh;
+    if (w === 'below') return 'Stopped because the estimate was clearly below level 3.' + sh;
+    if (w === 'time up') return 'Stopped because the time ran out, so this result is partial.';
+    if (w === 'bank used up') return 'INCOMPLETE: the question pool ran out before every rule was met' + (miss.length ? ' (' + miss.join('; ') + ')' : '') + '. Treat this as a partial practice result.' + sh;
+    if (w === 'bad pool') return 'INCOMPLETE: this question pool cannot run as a full test' + (ad.unmet && ad.unmet.length ? ' (' + ad.unmet.join('; ') + ')' : '') + '.';
+    if (w === 'max') return miss.length ? 'Ran to the maximum because required items were still missing (' + miss.join('; ') + '); the estimate may have been settled earlier.' + sh : 'Ran to the maximum: the estimate stayed too close to level 3 to call.' + sh;
+    return 'Stop reason not recorded.';
+  }
+  /* The app's adaptive step, kept here so tests drive the very code the phone runs. d is the saved draft: d.delivered stays the RAW history
+     (what was really given); only the engine normalises it internally. Never writes d.short (that field means "short version"). */
+  function adaptiveDraftStep(itemsById, d, cfg) {
+    var pool = adaptiveInit(d.ids.map(function (x) { return itemsById[x]; }).filter(Boolean), cfg);
+    var nx = adaptiveNext(pool, pool.cfg ? d.delivered : adaptiveNormalize(itemsById, d.delivered));   // v2 normalises inside and needs the raw history; v1 routes on the normalised one, as before
+    if (nx.done) { d.why = nx.why || null; d.unmet = nx.unmet || (nx.problems ? nx.problems : null); d.unbalanced = !!nx.unbalanced; d.shortCases = nx.short && nx.short.length ? nx.short : null; return nx; }
+    d.current = nx.id; d.why = null; return nx;
+  }
+  function adaptiveDraftReport(itemsById, d, cfg) {
+    var rep = adaptiveReport(adaptiveNormalize(itemsById, d.delivered), cfg);
+    rep.why = d.why || null; rep.unmet = d.unmet || null; rep.unbalanced = !!d.unbalanced; rep.short = d.shortCases || null;
+    return rep;
+  }
+  function confident(est, cfg) { return est.theta - cfg.cut > cfg.z * est.se ? 'above' : cfg.cut - est.theta > cfg.z * est.se ? 'below' : null; }
+  /* returns {id, note} or {done, why, unmet?, problems?}; why: above | below | max | bank used up | bad pool */
+  function adaptiveNext2(pool, delivered) {
+    var cfg = pool.cfg, byId = pool.byId, used = {}, i;
+    var raw = delivered;
+    delivered = adaptiveNormalize(byId, delivered);
+    if (pool.problems.length && !delivered.length) return { done: true, why: 'bad pool', problems: pool.problems, unmet: pool.problems };      // checked when the test starts; a test in progress carries on if a question is withdrawn            // a question withdrawn from the bank after the test began is skipped
+    var n = delivered.length;
+    delivered.forEach(function (d) { used[d.id] = true; });
+    var last = delivered[n - 1];
+    if (last && last.caseId && pool.cases[last.caseId]) {                          // a started case always runs to its end
+      var rest = pool.cases[last.caseId].items.filter(function (id) { return !used[id]; })[0];
+      if (rest) return { id: rest };
+    }
+    var casesStarted = pool.caseOrder.filter(function (id) { return pool.cases[id].items.some(function (x) { return used[x]; }); });
+    var open = pool.caseOrder.filter(function (id) { return casesStarted.indexOf(id) < 0; });
+    var wholeOpen = open.filter(function (id) { return pool.cases[id].items.length >= cfg.caseSize; });
+    if (wholeOpen.length) open = wholeOpen;                                         // a case that lost an item since the test began is only used when no whole case remains
+    var shortCases = casesStarted.filter(function (id) {                          // short = fewer than a whole case was actually given to her (a later withdrawal does not count)
+      return raw.filter(function (d) { return d.caseId === id; }).length < cfg.caseSize;
+    });
+    var wantCases = Math.min(cfg.cases, pool.caseOrder.length);
+    var free = pool.list.filter(function (it) { return !it.caseId && !used[it.id]; });
+    var caseFree = function (id) { return pool.cases[id].items.map(function (x) { return byId[x]; }); };
+    var have = function (g) { var h = 0; delivered.forEach(function (d) { if (qMatch(byId[d.id], g.match)) h++; }); return h; };
+    var est = estimate(delivered, cfg);
+    var unmet = cfg.quota.filter(function (g) { return have(g) < g.min; });
+    var unmetNames = unmet.map(function (g) { return g.name; });
+    // category counts among stand-alone items (the test plan applies to them)
+    var cnt = {}, s = 0;
+    delivered.forEach(function (d) { if (!d.caseId) { cnt[byId[d.id].cat] = (cnt[byId[d.id].cat] || 0) + 1; s++; } });
+    var cats = cfg.blueprint, catNames = Object.keys(cats);
+    var balanced = catNames.every(function (c) { return (cnt[c] || 0) * 100 >= cats[c][0] * s && (cnt[c] || 0) * 100 <= cats[c][1] * s; });
+    if (n >= cfg.max) return { done: true, why: 'max', unmet: unmetNames, unbalanced: !balanced, short: shortCases };
+    if (n >= cfg.min && casesStarted.length >= wantCases && !unmetNames.length && balanced) {
+      var c = confident(est, cfg); if (c) return { done: true, why: c, short: shortCases };
+    }
+    var size = function (id) { return pool.cases[id].items.length; };
+    var nearCase = function (list) { return list.slice().sort(function (a, b) { return Math.abs(pool.cases[a].level - est.theta) - Math.abs(pool.cases[b].level - est.theta) || hash2(a + n) - hash2(b + n); })[0]; };
+    var startCase = function (id, note) { return { id: pool.cases[id].items[0], note: note }; };
+    // 1. case studies: at their window, or earlier when a quota can only be met from case items
+    if (open.length && casesStarted.length < wantCases) {
+      var slot = casesStarted.length, from = cfg.caseFrom[slot], by = cfg.caseBy[slot];
+      var fits = open.filter(function (id) { return n + size(id) <= cfg.max; });
+      if (fits.length) {
+        var needNow = null;
+        unmet.forEach(function (g) {
+          var r = g.min - have(g), sa = free.filter(function (it) { return qMatch(it, g.match); }).length;
+          if (r > sa && n + 1 >= Math.min(from, g.by - 2 * cfg.caseSize)) {
+            var best = fits.slice().sort(function (a, b) { return caseFree(b).filter(function (it) { return qMatch(it, g.match); }).length - caseFree(a).filter(function (it) { return qMatch(it, g.match); }).length; })[0];
+            if (caseFree(best).some(function (it) { return qMatch(it, g.match); })) needNow = needNow || best;
+          }
+        });
+        if (needNow) return startCase(needNow, 'case study (carries weak-area items)');
+        if (n + 1 >= from) {
+          var nr = nearCase(fits);
+          if (n + 1 >= by || Math.abs(pool.cases[nr].level - est.theta) <= 1) return startCase(nr, 'case study');
+        }
+      }
+    }
+    // 2. stand-alone items
+    var minStand = cfg.min - cfg.caseSize * wantCases, P = Math.max(s + 1, minStand);   // stand-alone count at the earliest stop
+    var capOk = function (it) { var b = cats[it.cat]; return !b || ((cnt[it.cat] || 0) + 1) * 100 <= b[1] * P; };
+    var deficit = function (it) { var b = cats[it.cat]; return b ? (b[0] + b[1]) / 200 * (s + 1) - (cnt[it.cat] || 0) : 0; };
+    var urgent = function (it) { var b = cats[it.cat]; return b && Math.ceil(b[0] * P / 100) - (cnt[it.cat] || 0) >= P - s ? 1 : 0; };
+    var dist = function (it) { return Math.abs(it.level - est.theta); };
+    var tie = function (it) { return hash2(it.id + ':' + n); };
+    var best = null, forced = null, worst = null;
+    cfg.quota.forEach(function (g) {                                               // the group furthest behind its schedule that still has an item to give
+      var need = Math.min(g.min, Math.ceil(g.min * (n + 1) / g.by)), gap = need - have(g);
+      if (gap > 0 && free.some(function (it) { return qMatch(it, g.match); }) && (!worst || gap > worst.gap)) worst = { g: g, gap: gap };
+    });
+    if (worst) {
+      var p1 = free.filter(function (it) { return qMatch(it, worst.g.match) && capOk(it); });
+      if (!p1.length) p1 = free.filter(function (it) { return qMatch(it, worst.g.match); });
+      p1.sort(function (a, b) { return urgent(b) - urgent(a) || deficit(b) - deficit(a) || dist(a) - dist(b) || tie(a) - tie(b); });
+      best = p1[0]; forced = worst.g.name;
+    }
+    if (!best) {
+      var pool2 = free.filter(capOk);
+      if (!pool2.length) pool2 = free;
+      pool2.sort(function (a, b) { return urgent(b) - urgent(a) || deficit(b) - deficit(a) || dist(a) - dist(b) || tie(a) - tie(b); });
+      best = pool2[0];
+    }
+    if (!best) {                                                                    // no stand-alone item left: use a whole case if one can still be given
+      var fit2 = casesStarted.length < cfg.cases ? open.filter(function (id) { return n + size(id) <= cfg.max; }) : [];
+      if (fit2.length) return startCase(nearCase(fit2), 'case study (stand-alone items used up)');
+      return { done: true, why: 'bank used up', unmet: unmetNames, unbalanced: !balanced, short: shortCases };
+    }
+    var note = forced ? 'weak-area item: ' + forced : (dist(best) > 1.5 ? 'nearest available level used' : null);
+    return { id: best.id, note: note };
+  }
+
+  function adaptiveReport(delivered, cfg) {
+    if (cfg && cfg.v === 2) {                                                      // reading comes from the estimate and its spread only, so the phone and the server agree
+      var c2 = v2cfg(cfg), est = estimate(delivered, c2), th = Math.round(est.theta * 100) / 100, se = Math.round(est.se * 100) / 100, k = confident(est, c2);
+      var rd = k === 'above' ? 'clearly above level 3 on our own practice scale' : k === 'below' ? 'clearly below level 3 on our own practice scale' : 'not clearly above or below level 3';
+      return { ability: th, se: se, reading: rd, side: k, edge: est.theta > 5.5 || est.theta < 0.5, scale: '0 to 6', path: delivered.map(function (d) { return d.level; }), v: 2 };
+    }
     var last15 = delivered.slice(-15).filter(function (d) { return d.pts >= 0.5; });
     var ability = last15.length ? last15.reduce(function (s, d) { return s + d.level; }, 0) / last15.length : null;
     var reading = ability === null ? 'not enough right answers to estimate'
@@ -477,7 +671,7 @@ a{color:var(--accent)}
     parseNumber: parseNumber, isAnswered: isAnswered, score: score, trapFor: trapFor,
     encodeResp: encodeResp, decodeResp: decodeResp, answerText: answerText, markAttempt: markAttempt,
     encodeResult: encodeResult, decodeResult: decodeResult, b64uEncode: b64uEncode, b64uDecode: b64uDecode,
-    adaptiveInit: adaptiveInit, adaptiveNext: adaptiveNext, adaptiveReport: adaptiveReport, ADAPT: ADAPT
+    adaptiveInit: adaptiveInit, adaptiveNext: adaptiveNext, adaptiveReport: adaptiveReport, ADAPT: ADAPT, V2: V2, adaptiveEstimate: estimate, qMatch: qMatch, adaptiveValidate: validatePool, adaptiveNormalize: adaptiveNormalize, adaptiveDraftStep: adaptiveDraftStep, adaptiveDraftReport: adaptiveDraftReport, adaptiveEndText: adaptiveEndText, adaptiveConfig: v2cfg
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
   else root.Core = Core;
@@ -898,7 +1092,7 @@ a{color:var(--accent)}
     return h('div', { class: 'card row', onclick: function () { go('#set/' + s.id); }, style: 'cursor:pointer' },
       h('div', { class: 'grow' },
         h('b', null, s.title),
-        h('div', { class: 'small soft' }, kindLabel(s) + ' · ' + (s.kind === 'adaptive' ? '30 to 50 of ' + s.items.length : s.items.length) + ' questions')),
+        h('div', { class: 'small soft' }, kindLabel(s) + ' · ' + (s.kind === 'adaptive' ? (s.cfg && s.cfg.v === 2 ? (s.cfg.min || C.V2.min) + ' to ' + (s.cfg.max || C.V2.max) : '30 to 50') + ' of ' + s.items.length : s.items.length) + ' questions')),
       h('span', { class: 'pill ' + st.cls }, st.text));
   }
   function viewSets() {
@@ -934,19 +1128,24 @@ a{color:var(--accent)}
     if (!s) return viewSets();
     var mine = attemptsFor(id), old = earlier(id), draft = S.drafts[id];
     var adaptive = s.kind === 'adaptive';
-    var mins = adaptive ? 90 : Math.round(s.items.length * 1.75);
+    var v2 = adaptive && s.cfg && s.cfg.v === 2, lo = v2 ? (s.cfg.min || C.V2.min) : 30, hi = v2 ? (s.cfg.max || C.V2.max) : 50;
+    var mins = adaptive ? (v2 ? (s.cfg.minutes || C.V2.minutes) : 90) : Math.round(s.items.length * 1.75);
     var out = [
       h('button', { class: 'plain', onclick: function () { go('#sets'); } }, '‹ All sets'),
       h('h1', null, s.title),
-      h('p', { class: 'soft' }, kindLabel(s) + ' · ' + (adaptive ? '30 to 50 questions, picked by how you answer' : s.items.length + ' questions') + ' · about ' + mins + ' min'),
+      h('p', { class: 'soft' }, kindLabel(s) + ' · ' + (adaptive ? lo + ' to ' + hi + ' questions, picked by how you answer' : s.items.length + ' questions') + ' · about ' + mins + ' min'),
       s.difficulty ? h('p', null, h('span', { class: 'pill' }, 'Difficulty: ' + s.difficulty)) : null
     ];
     if (draft) out.push(h('button', { onclick: function () { go('#run/' + encodeURIComponent(id)); } }, 'Carry on where you stopped'));
     var start = function (mode) { return function () { startRun(id, s.title, s.items.slice(), mode); }; };
+    var poolProblems = v2 ? C.adaptiveInit(s.items.map(function (x) { return itemsById[x]; }).filter(Boolean), s.cfg).problems : [];
     if (adaptive) {
       out.push(h('div', { class: 'card' },
-        h('p', null, 'Works like the real exam: one question at a time, no going back. A right answer brings a harder question, a wrong answer an easier one. It stops between 30 and 50 questions. 90-minute timer.'),
-        h('button', { onclick: start('adaptive') }, draft ? 'Start again from question 1' : 'Start the test')));
+        h('p', null, v2
+          ? 'Works like the real exam: one question at a time, no going back. Your answers move an estimate of your level, which steers how hard the next question is. The test also has to give you case studies, mix the eight test-plan areas and include the weak areas we chose for you (calculations, select-all, maternity and children, acid-base and potassium, heart failure, health promotion; the same list for everyone, not picked from your results), so a question can be easier or harder than your last answer suggests. It runs ' + lo + ' to ' + hi + ' questions and stops when the estimate is clearly above or below level 3 on our own practice scale, or at ' + hi + '. This copies the real exam pattern but is not a real NCLEX score and does not predict a pass. ' + mins + '-minute timer.'
+          : 'Works like the real exam: one question at a time, no going back. A right answer brings a harder question, a wrong answer an easier one. It stops between ' + lo + ' and ' + hi + ' questions. 90-minute timer.'),
+        poolProblems.length ? h('p', { class: 'small', style: 'color:var(--warn)' }, 'This test cannot start: ' + poolProblems.join('; ') + '. Tell Nova.') : null,
+        poolProblems.length ? null : h('button', { onclick: start('adaptive') }, draft ? 'Start again from question 1' : 'Start the test')));
     } else {
       out.push(h('div', { class: 'card stack' },
         h('button', { onclick: start('learn') }, draft ? 'Start again: practice' : 'Practice'),
@@ -1064,9 +1263,9 @@ a{color:var(--accent)}
       if (document.hidden) return;
       d.elapsed += 1;
       if (d.mode === 'adaptive') {
-        var left = 90 * 60 - d.elapsed;
+        var sc = setsById[d.key], left = ((sc && sc.cfg && sc.cfg.v === 2 ? (sc.cfg.minutes || C.V2.minutes) : 90) * 60) - d.elapsed;
         $time.textContent = fmtTime(Math.max(0, left)) + ' left';
-        if (left <= 0) { toast('Time is up'); return finishRun(key); }
+        if (left <= 0) { toast('Time is up'); d.why = 'time up'; return finishRun(key); }
       } else $time.textContent = d.mode === 'page' ? fmtTime(d.elapsed) : '';
       if (qClock) qClock();
       if (++tick % 10 === 0) save();
@@ -1075,7 +1274,7 @@ a{color:var(--accent)}
     function answeredCount() { return d.ids.filter(function (id) { return C.isAnswered(itemsById[id], d.answers[id]); }).length; }
     function refreshCount() {
       $count.textContent = d.mode === 'page' ? answeredCount() + ' of ' + d.ids.length
-        : d.mode === 'adaptive' ? 'Q ' + (d.delivered.length + 1) : 'Q ' + (d.idx + 1) + ' of ' + d.ids.length;
+        : d.mode === 'adaptive' ? 'Q ' + (C.adaptiveNormalize(itemsById, d.delivered).length + 1) : 'Q ' + (d.idx + 1) + ' of ' + d.ids.length;
     }
 
     var bar = h('div', { class: 'bar' },
@@ -1098,18 +1297,18 @@ a{color:var(--accent)}
         var id;
         if (d.mode === 'adaptive') {
           if (!d.current) {
-            var pool = C.adaptiveInit(d.ids.map(function (x) { return itemsById[x]; }));
-            var nx = C.adaptiveNext(pool, d.delivered);
+            var nx = C.adaptiveDraftStep(itemsById, d, (setsById[d.key] || {}).cfg);   // d.delivered stays the raw history; the engine normalises inside
             if (nx.done) return finishRun(key);
-            d.current = nx.id; save();
+            save();
           }
+          if (!itemsById[d.current]) { d.current = null; return showOne(); }      // a question withdrawn from the bank: pick again
           id = d.current;
         } else {
           if (d.idx >= d.ids.length) return finishRun(key);
           id = d.ids[d.idx];
         }
         var it = itemsById[id];
-        var n = d.mode === 'adaptive' ? d.delivered.length + 1 : d.idx + 1;
+        var n = d.mode === 'adaptive' ? C.adaptiveNormalize(itemsById, d.delivered).length + 1 : d.idx + 1;
         if (d.qId !== id) { d.qId = id; d.qStart = d.elapsed; }                       // survives a pause or a locked phone
         d.times = d.times || {}; d.changes = d.changes || {}; d.unsure = d.unsure || {};
         curTools = { id: id, title: 'Question ' + n };
@@ -1357,7 +1556,7 @@ a{color:var(--accent)}
     key = key.replace(/^(retry:)+/, 'retry:');
     var attempt = { set: setId, of: key, title: d.title, mode: d.mode, started: d.started, finished: new Date().toISOString(), secs: d.elapsed,
       order: (d.mode === 'adaptive' || setId === 'retry' || d.short) ? ids : null, answers: d.answers, times: d.times || null, changes: d.changes || null, unsure: d.unsure ? Object.keys(d.unsure).filter(function (k) { return d.unsure[k]; }) : null, think: d.think || null, short: !!d.short, per: m.per, score: m.score, max: m.max, pct: m.pct, sent: false };
-    if (d.mode === 'adaptive') attempt.adaptive = C.adaptiveReport(d.delivered);
+    if (d.mode === 'adaptive') attempt.adaptive = C.adaptiveDraftReport(itemsById, d, (setsById[d.key] || {}).cfg);
     S.attempts.push(attempt);
     Object.keys(m.per).forEach(function (id) { if (m.per[id] < 1) S.cards['M:' + id] = { box: 0, due: today() }; });
     delete S.drafts[key];
@@ -1405,7 +1604,12 @@ a{color:var(--accent)}
       h('div', { class: 'card center' },
         h('div', { class: 'big' }, fmtPct(a.pct)),
         h('div', { class: 'soft' }, fmtPts(a.score) + ' of ' + a.max + ' points · ' + fmtTime(a.secs) + ' · ' + fmtDate(a.finished)),
-        a.adaptive ? h('p', null, 'Level reached: ', h('b', null, a.adaptive.ability === null ? 'n/a' : a.adaptive.ability + ' of 5'), ' · ' + a.adaptive.reading) : null,
+        a.adaptive ? (a.adaptive.v === 2
+          ? h('div', null,
+              h('p', null, 'Level estimate: ', h('b', null, a.adaptive.ability + ' (± ' + a.adaptive.se + ')'), ' on our own 0 to 6 practice scale (question levels run 1 to 5; this scale is not calibrated) · ' + a.adaptive.reading),
+              a.adaptive.edge ? h('p', { class: 'small soft' }, 'The estimate is at the very end of the scale, so its spread is not reliable.') : null,
+              h('p', { class: 'small soft' }, C.adaptiveEndText(a.adaptive))) 
+          : h('p', null, 'Level reached: ', h('b', null, a.adaptive.ability === null ? 'n/a' : a.adaptive.ability + ' of 5'), ' · ' + a.adaptive.reading)) : null,
         h('p', { class: 'small soft' }, 'A practice score shows what to work on. It does not predict a pass or a fail.'))
     ];
     var feels = [['easy', 'Too easy'], ['right', 'About right'], ['hard', 'Too hard']];
