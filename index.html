@@ -665,8 +665,15 @@ a{color:var(--accent)}
     return out;
   }
 
+  function runElapsed(draft, wallClock, now) {
+    var elapsed = Math.max(0, draft.elapsed || 0);
+    var started = Date.parse(draft.started);
+    if (!wallClock || !isFinite(started) || !isFinite(now)) return elapsed;
+    return Math.max(elapsed, Math.floor((now - started) / 1000));
+  }
+
   var Core = {
-    insights: insights,
+    runElapsed: runElapsed, insights: insights,
     buildMix: buildMix,
     parseNumber: parseNumber, isAnswered: isAnswered, score: score, trapFor: trapFor,
     encodeResp: encodeResp, decodeResp: decodeResp, answerText: answerText, markAttempt: markAttempt,
@@ -866,6 +873,11 @@ a{color:var(--accent)}
     var st = streak(); if (st >= 2) line.push(' · ' + st + ' days in a row');
     out.push(h('p', { class: 'soft' }, line));
 
+    if (setsById.CA1) out.push(h('div', { class: 'card stack' },
+      h('h2', null, 'Cardiology adaptive practice'),
+      h('p', null, '85–150 questions · five hours including breaks · cardiac-only practice estimate'),
+      h('button', { onclick: function () { go('#set/CA1'); } }, 'Open cardiology test')));
+    if (setsById.MX2) out.push(h('p', null, h('a', { href: '#set/MX2' }, 'Open the new mixed practice test')));
     var dd = daily(), draftKeys = Object.keys(S.drafts), due = dueCards();
     var dot = function (n, done) { return h('div', { class: 'dot' + (done ? ' done' : ''), 'aria-label': done ? 'done' : 'step ' + n }, done ? '✓' : String(n)); };
     var steps = h('div', { class: 'card steps3' }, h('div', { class: 'soft small' }, 'Today, in three small steps'));
@@ -1136,13 +1148,14 @@ a{color:var(--accent)}
       h('p', { class: 'soft' }, kindLabel(s) + ' · ' + (adaptive ? lo + ' to ' + hi + ' questions, picked by how you answer' : s.items.length + ' questions') + ' · about ' + mins + ' min'),
       s.difficulty ? h('p', null, h('span', { class: 'pill' }, 'Difficulty: ' + s.difficulty)) : null
     ];
+    if (s.description) out.push(h('p', { class: 'soft' }, s.description));
     if (draft) out.push(h('button', { onclick: function () { go('#run/' + encodeURIComponent(id)); } }, 'Carry on where you stopped'));
     var start = function (mode) { return function () { startRun(id, s.title, s.items.slice(), mode); }; };
     var poolProblems = v2 ? C.adaptiveInit(s.items.map(function (x) { return itemsById[x]; }).filter(Boolean), s.cfg).problems : [];
     if (adaptive) {
       out.push(h('div', { class: 'card' },
         h('p', null, v2
-          ? 'Works like the real exam: one question at a time, no going back. Your answers move an estimate of your level, which steers how hard the next question is. The test also has to give you case studies, mix the eight test-plan areas and include the weak areas we chose for you (calculations, select-all, maternity and children, acid-base and potassium, heart failure, health promotion; the same list for everyone, not picked from your results), so a question can be easier or harder than your last answer suggests. It runs ' + lo + ' to ' + hi + ' questions and stops when the estimate is clearly above or below level 3 on our own practice scale, or at ' + hi + '. This copies the real exam pattern but is not a real NCLEX score and does not predict a pass. ' + mins + '-minute timer.'
+          ? 'Adaptive practice: one question at a time, no going back. Your answers move an estimate on our own practice scale, which helps select the next question. Case studies and the set requirements also affect selection, so difficulty may not change after every answer. ' + (s.cfg.blueprint ? 'This set uses its own subject mix. ' : 'This set mixes the eight test-plan areas. ') + 'Scheduled practice requirements: ' + (s.cfg.quota || C.V2.quota).map(function (q) { return q.name + ' (at least ' + q.min + ' by question ' + q.by + ')'; }).join(', ') + '. It runs ' + lo + ' to ' + hi + ' questions, stopping when the estimate’s approximate uncertainty interval is entirely above or below ' + (s.cfg.cut === undefined ? C.V2.cut : s.cfg.cut) + ' on our practice scale and set requirements are met, or at the maximum length. These original, uncalibrated questions do not provide a real NCLEX score or predict a pass. ' + mins + '-minute timer.'
           : 'Works like the real exam: one question at a time, no going back. A right answer brings a harder question, a wrong answer an easier one. It stops between ' + lo + ' and ' + hi + ' questions. 90-minute timer.'),
         poolProblems.length ? h('p', { class: 'small', style: 'color:var(--warn)' }, 'This test cannot start: ' + poolProblems.join('; ') + '. Tell Nova.') : null,
         poolProblems.length ? null : h('button', { onclick: start('adaptive') }, draft ? 'Start again from question 1' : 'Start the test')));
@@ -1252,20 +1265,41 @@ a{color:var(--accent)}
     var d = S.drafts[key];
     if (!d) return go('#sets');
     stopTimer();
+    var runSet = setsById[d.key];
+    var wallClock = d.mode === 'adaptive' && runSet && runSet.cfg && runSet.cfg.clock === 'wall';
+    var limit = d.mode === 'adaptive' ? ((runSet && runSet.cfg && runSet.cfg.v === 2 ? (runSet.cfg.minutes || C.V2.minutes) : 90) * 60) : null;
+    function expired() {
+      d.elapsed = C.runElapsed(d, wallClock, Date.now());
+      if (limit !== null && d.elapsed >= limit) {
+        d.elapsed = Math.min(d.elapsed, limit);
+        d.why = 'time up';
+        if (!C.adaptiveNormalize(itemsById, d.delivered).length) {
+          stopTimer(); delete S.drafts[key]; save(); go('#set/' + encodeURIComponent(key));
+          toast('Time ran out before any question was submitted. No result was recorded.'); return true;
+        }
+        if (d.current && !d.delivered.some(function (q) { return q.id === d.current; })) {
+          delete d.answers[d.current];
+          if (d.times) delete d.times[d.current];
+        }
+        toast('Time is up'); finishRun(key); return true;
+      }
+      return false;
+    }
+    if (expired()) return;
     curSeed = d.seed || '';
     padStrokes = [];
-    var $time = h('span', { class: 't small soft' }, fmtTime(d.elapsed));
+    var $time = h('span', { class: 't small soft' }, limit === null ? fmtTime(d.elapsed) : fmtTime(Math.max(0, limit - d.elapsed)) + ' left');
     var $qtime = h('span', { class: 't', title: 'Time on this question' }, '');
     qClock = null;
     var $count = h('span', { class: 'small soft' });
     var tick = 0;
     timerHandle = setInterval(function () {
-      if (document.hidden) return;
-      d.elapsed += 1;
+      if (document.hidden && !wallClock) return;
+      if (!wallClock) d.elapsed += 1;
+      if (expired()) return;
       if (d.mode === 'adaptive') {
         var sc = setsById[d.key], left = ((sc && sc.cfg && sc.cfg.v === 2 ? (sc.cfg.minutes || C.V2.minutes) : 90) * 60) - d.elapsed;
         $time.textContent = fmtTime(Math.max(0, left)) + ' left';
-        if (left <= 0) { toast('Time is up'); d.why = 'time up'; return finishRun(key); }
       } else $time.textContent = d.mode === 'page' ? fmtTime(d.elapsed) : '';
       if (qClock) qClock();
       if (++tick % 10 === 0) save();
@@ -1278,7 +1312,7 @@ a{color:var(--accent)}
     }
 
     var bar = h('div', { class: 'bar' },
-      h('button', { class: 'plain', onclick: function () { save(); stopTimer(); go('#home'); toast('Saved. Carry on any time.'); } }, 'Pause'),
+      h('button', { class: 'plain', onclick: function () { save(); stopTimer(); go('#home'); toast(wallClock ? 'Saved. The five-hour clock continues.' : 'Saved. Carry on any time.'); } }, wallClock ? 'Break (clock continues)' : 'Pause'),
       $count, h('button', { class: 'plain', 'aria-label': 'Tools: scratch pad, calculator, notes', onclick: togglePad }, '✎ Tools'), h('span', null, $qtime, ' ', $time));
 
     if (d.mode === 'page') {
@@ -1319,6 +1353,7 @@ a{color:var(--accent)}
         qClock();
         var answeredAt = null;
         var done = function () {
+          if (expired()) return;
           d.times[id] = answeredAt !== null ? answeredAt : d.elapsed - d.qStart;   // reading the explanation is not thinking time
           if (d.mode === 'adaptive') {
             d.delivered.push({ id: id, level: it.level, caseId: it.caseId || null, pts: C.score(it, d.answers[id]) });
